@@ -3,9 +3,12 @@ package me.ichun.mods.mobdismemberment.client.helper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.LivingEntity;
 
 import java.lang.reflect.Field;
@@ -54,7 +57,7 @@ public class ModelHelper {
         Set<ModelPart> processedParts = new HashSet<>();
 
         try {
-            EntityRenderer<?> renderer = Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(entity);
+            EntityRenderer<?, ?> renderer = Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(entity);
             if (renderer instanceof LivingEntityRenderer livingRenderer) {
                 EntityModel<?> model = livingRenderer.getModel();
                 if (model != null) {
@@ -76,16 +79,19 @@ public class ModelHelper {
      * Get the texture for an entity.
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public static ResourceLocation getEntityTexture(LivingEntity entity) {
+    public static Identifier getEntityTexture(LivingEntity entity) {
         try {
-            EntityRenderer renderer = Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(entity);
-            if (renderer instanceof LivingEntityRenderer livingRenderer) {
-                return livingRenderer.getTextureLocation(entity);
+            EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
+            EntityRenderState renderState = dispatcher.extractEntity(entity, 0.0F);
+            EntityRenderer<?, ?> renderer = dispatcher.getRenderer(renderState);
+            if (renderState instanceof LivingEntityRenderState livingRenderState
+                    && renderer instanceof LivingEntityRenderer livingRenderer) {
+                return livingRenderer.getTextureLocation(livingRenderState);
             }
         } catch (Exception e) {
             // Failed to get texture
         }
-        return ResourceLocation.withDefaultNamespace("textures/entity/zombie/zombie.png");
+        return Identifier.withDefaultNamespace("textures/entity/zombie/zombie.png");
     }
 
     /**

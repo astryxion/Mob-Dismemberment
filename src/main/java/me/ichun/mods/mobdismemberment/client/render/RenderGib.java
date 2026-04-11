@@ -1,99 +1,102 @@
 package me.ichun.mods.mobdismemberment.client.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import me.ichun.mods.mobdismemberment.client.entity.EntityGib;
+import me.ichun.mods.mobdismemberment.client.render.state.GibRenderState;
 import me.ichun.mods.mobdismemberment.common.core.Config;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.state.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.FastColor;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 
-public class RenderGib extends EntityRenderer<EntityGib> {
-    private static final ResourceLocation FALLBACK_TEXTURE = ResourceLocation.withDefaultNamespace("textures/entity/zombie/zombie.png");
+public class RenderGib extends EntityRenderer<EntityGib, GibRenderState> {
+    private static final Identifier FALLBACK_TEXTURE = Identifier.withDefaultNamespace("textures/entity/zombie/zombie.png");
 
     public RenderGib(EntityRendererProvider.Context context) {
         super(context);
     }
 
     @Override
-    public ResourceLocation getTextureLocation(EntityGib gib) {
-        if (gib.texture != null) {
-            return gib.texture;
-        }
-        return FALLBACK_TEXTURE;
+    public GibRenderState createRenderState() {
+        return new GibRenderState();
     }
 
     @Override
-    public void render(EntityGib gib, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
-        if (gib.modelPart == null) {
-            return;
-        }
-
-        poseStack.pushPose();
-
-        // Calculate alpha for fade out
-        float alpha = Mth.clamp(
+    public void extractRenderState(EntityGib gib, GibRenderState state, float partialTicks) {
+        super.extractRenderState(gib, state, partialTicks);
+        state.modelPart = gib.modelPart;
+        state.texture = gib.texture != null ? gib.texture : FALLBACK_TEXTURE;
+        state.centerX = gib.centerX;
+        state.centerY = gib.centerY;
+        state.centerZ = gib.centerZ;
+        state.alpha = Mth.clamp(
                 gib.groundTime >= Config.GIB_GROUND_TIME.get()
                         ? 1.0F - (gib.groundTime - Config.GIB_GROUND_TIME.get() + partialTicks) / 20F
                         : 1.0F,
                 0F, 1F
         );
+        state.interpolatedYaw = gib.getInterpolatedYaw(partialTicks);
+        state.interpolatedPitch = gib.getInterpolatedPitch(partialTicks);
+    }
 
-        // Apply rotation
-        float yaw = gib.getInterpolatedYaw(partialTicks);
-        float pitch = gib.getInterpolatedPitch(partialTicks);
+    @Override
+    protected boolean affectedByCulling(EntityGib display) {
+        return false;
+    }
+
+    @Override
+    public void submit(GibRenderState state, PoseStack poseStack, SubmitNodeCollector nodeCollector, CameraRenderState cameraRenderState) {
+        if (state.modelPart == null) {
+            return;
+        }
+
+        poseStack.pushPose();
+
+        float yaw = state.interpolatedYaw;
+        float pitch = state.interpolatedPitch;
 
         poseStack.mulPose(Axis.YP.rotationDegrees(-yaw));
         poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
 
-        // Flip model (standard for entity rendering)
         poseStack.scale(-1.0F, -1.0F, 1.0F);
 
-        // Translate to center the geometry at origin (center values are in model units)
-        // This makes the rotation happen around the geometric center
-        poseStack.translate(-gib.centerX / 16.0F, -gib.centerY / 16.0F, -gib.centerZ / 16.0F);
+        poseStack.translate(-state.centerX / 16.0F, -state.centerY / 16.0F, -state.centerZ / 16.0F);
 
-        // Get texture and render
-        ResourceLocation texture = getTextureLocation(gib);
-        RenderType renderType = RenderType.entityTranslucent(texture);
-        VertexConsumer vertexConsumer = buffer.getBuffer(renderType);
+        Identifier texture = state.texture;
+        RenderType renderType = RenderTypes.entityTranslucent(texture, false);
+        int rgba = ARGB.color(Mth.floor(state.alpha * 255.0F), 255, 255, 255);
 
-        // Save original pivot and rotation values
-        float origX = gib.modelPart.x;
-        float origY = gib.modelPart.y;
-        float origZ = gib.modelPart.z;
-        float origXRot = gib.modelPart.xRot;
-        float origYRot = gib.modelPart.yRot;
-        float origZRot = gib.modelPart.zRot;
+        net.minecraft.client.model.geom.ModelPart part = state.modelPart;
+        float origX = part.x;
+        float origY = part.y;
+        float origZ = part.z;
+        float origXRot = part.xRot;
+        float origYRot = part.yRot;
+        float origZRot = part.zRot;
 
-        // Zero out pivot and rotation so part renders at its cube positions only
-        gib.modelPart.x = 0;
-        gib.modelPart.y = 0;
-        gib.modelPart.z = 0;
-        gib.modelPart.xRot = 0;
-        gib.modelPart.yRot = 0;
-        gib.modelPart.zRot = 0;
+        part.x = 0;
+        part.y = 0;
+        part.z = 0;
+        part.xRot = 0;
+        part.yRot = 0;
+        part.zRot = 0;
 
-        // Render the stored model part
-        int rgba = FastColor.ARGB32.color(Mth.floor(alpha * 255.0F), 255, 255, 255);
-        gib.modelPart.render(poseStack, vertexConsumer, packedLight, OverlayTexture.NO_OVERLAY, rgba);
+        nodeCollector.submitModelPart(part, poseStack, renderType, state.lightCoords, OverlayTexture.NO_OVERLAY, null, rgba, null);
 
-        // Restore original values
-        gib.modelPart.x = origX;
-        gib.modelPart.y = origY;
-        gib.modelPart.z = origZ;
-        gib.modelPart.xRot = origXRot;
-        gib.modelPart.yRot = origYRot;
-        gib.modelPart.zRot = origZRot;
+        part.x = origX;
+        part.y = origY;
+        part.z = origZ;
+        part.xRot = origXRot;
+        part.yRot = origYRot;
+        part.zRot = origZRot;
 
         poseStack.popPose();
-
-        super.render(gib, entityYaw, partialTicks, poseStack, buffer, packedLight);
     }
 }

@@ -8,7 +8,8 @@ import me.ichun.mods.mobdismemberment.common.core.Config;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.neoforged.api.distmarker.Dist;
@@ -39,7 +40,7 @@ public class MobDismemberment {
                     .updateInterval(1)
                     .noSave()
                     .noSummon()
-                    .build(ResourceLocation.fromNamespaceAndPath(MOD_ID, "gib").toString()));
+                    .build(ResourceKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(MOD_ID, "gib"))));
 
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> BLOOD_PARTICLE = PARTICLE_TYPES.register("blood",
             () -> new SimpleParticleType(false));
@@ -53,7 +54,7 @@ public class MobDismemberment {
 
         modContainer.registerConfig(ModConfig.Type.CLIENT, Config.SPEC);
 
-        if (FMLEnvironment.dist == Dist.CLIENT) {
+        if (FMLEnvironment.getDist() == Dist.CLIENT) {
             modEventBus.addListener(this::clientSetup);
             modEventBus.addListener(this::registerEntityRenderers);
             modEventBus.addListener(this::registerParticleProviders);

@@ -2,14 +2,14 @@ package me.ichun.mods.mobdismemberment.client.particle;
 
 import me.ichun.mods.mobdismemberment.common.core.Config;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.particle.ParticleRenderType;
+import net.minecraft.client.particle.SingleQuadParticle;
 import net.minecraft.client.particle.SpriteSet;
-import net.minecraft.client.particle.TextureSheetParticle;
+import net.minecraft.util.RandomSource;
 
-public class ParticleBlood extends TextureSheetParticle {
+public class ParticleBlood extends SingleQuadParticle {
 
-    public ParticleBlood(ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, boolean isPlayer, SpriteSet sprites) {
-        super(level, x, y, z);
+    public ParticleBlood(ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, boolean isPlayer, SpriteSet sprites, RandomSource randomSource) {
+        super(level, x, y, z, xSpeed, ySpeed, zSpeed, sprites.get(randomSource));
 
         // Matches original 1.12.2 constructor exactly
         this.gravity = 0.06F;
@@ -29,9 +29,11 @@ public class ParticleBlood extends TextureSheetParticle {
 
         this.lifetime = (int) (200F + (20F / (random.nextFloat() * 0.9F + 0.1F)));
         this.hasPhysics = true;
+    }
 
-        // Pick sprite from the SpriteSet (uses our custom blood_0 through blood_3 textures)
-        this.pickSprite(sprites);
+    @Override
+    protected SingleQuadParticle.Layer getLayer() {
+        return SingleQuadParticle.Layer.TRANSLUCENT;
     }
 
     @Override
@@ -59,10 +61,5 @@ public class ParticleBlood extends TextureSheetParticle {
                 this.y += 0.2D;
             }
         }
-    }
-
-    @Override
-    public ParticleRenderType getRenderType() {
-        return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
     }
 }

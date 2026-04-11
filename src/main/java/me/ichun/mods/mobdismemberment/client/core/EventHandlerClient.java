@@ -11,8 +11,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.monster.Creeper;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.vehicle.minecart.MinecartTNT;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.vehicle.MinecartTNT;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
@@ -31,7 +32,7 @@ public class EventHandlerClient {
     public void onLivingDeath(LivingDeathEvent event) {
         LivingEntity entity = event.getEntity();
         // Dismember any LivingEntity except players and babies
-        if (entity.level().isClientSide &&
+        if (entity.level() instanceof ClientLevel &&
             !(entity instanceof Player) &&
             !entity.isBaby()) {
             dismemberTimeout.put(entity, 2);
@@ -60,7 +61,7 @@ public class EventHandlerClient {
                 activeGibs.removeIf(Entity::isRemoved);
 
                 for (Entity ent : world.entitiesForRendering()) {
-                    if (ent instanceof Creeper || ent instanceof PrimedTnt || ent instanceof MinecartTNT) {
+                    if (ent instanceof Creeper || ent instanceof PrimedTnt || ent.getType() == EntityType.TNT_MINECART || ent instanceof MinecartTNT) {
                         if (!explosionSources.contains(ent)) {
                             explosionSources.add(ent);
                         }
@@ -92,7 +93,7 @@ public class EventHandlerClient {
 
                                 dismemberTimeout.put(creeper, 2);
                             }
-                        } else if (ent instanceof PrimedTnt || ent instanceof MinecartTNT) {
+                        } else if (ent instanceof PrimedTnt || ent.getType() == EntityType.TNT_MINECART || ent instanceof MinecartTNT) {
                             if (!exploTime.containsKey(ent)) {
                                 int time = MobDismemberment.clientTicks % 24000;
                                 if (time > 23959) {

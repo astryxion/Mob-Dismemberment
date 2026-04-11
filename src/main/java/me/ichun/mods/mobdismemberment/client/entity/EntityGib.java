@@ -5,9 +5,8 @@ import me.ichun.mods.mobdismemberment.common.MobDismemberment;
 import me.ichun.mods.mobdismemberment.common.core.Config;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -15,8 +14,13 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.monster.Creeper;
-import net.minecraft.world.entity.vehicle.MinecartTNT;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.vehicle.minecart.MinecartTNT;
 import net.minecraft.world.level.Level;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,7 +31,7 @@ public class EntityGib extends Entity {
 
     // Model part data - stores the actual bone to render
     public ModelPart modelPart;
-    public ResourceLocation texture;
+    public Identifier texture;
     public String partName;
 
     // Position offset from entity center where this part was
@@ -57,7 +61,6 @@ public class EntityGib extends Entity {
         this.setId(CLIENT_ID_COUNTER.getAndDecrement());
         groundTime = 0;
         liveTime = MobDismemberment.clientTicks;
-        noCulling = true;
         noPhysics = false;
     }
 
@@ -114,7 +117,7 @@ public class EntityGib extends Entity {
             dist = Math.pow(dist, 2);
 
             double mag;
-            if (explo instanceof PrimedTnt || explo instanceof MinecartTNT) {
+            if (explo instanceof PrimedTnt || explo.getType() == EntityType.TNT_MINECART || explo instanceof MinecartTNT) {
                 mag = 1.0D * (4.0 / dist);
             } else if (explo instanceof Creeper creep) {
                 mag = creep.isPowered() ? 1.0D * (6.0D / dist) : 1.0D * (3.0D / dist);
@@ -213,7 +216,12 @@ public class EntityGib extends Entity {
     }
 
     @Override
-    public boolean causeFallDamage(float distance, float multiplier, net.minecraft.world.damagesource.DamageSource source) {
+    public boolean causeFallDamage(double distance, float multiplier, DamageSource source) {
+        return false;
+    }
+
+    @Override
+    public boolean hurtServer(ServerLevel level, DamageSource damageSource, float amount) {
         return false;
     }
 
@@ -251,16 +259,16 @@ public class EntityGib extends Entity {
     }
 
     @Override
-    public boolean saveAsPassenger(CompoundTag tag) {
+    public boolean saveAsPassenger(ValueOutput output) {
         return false;
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    protected void readAdditionalSaveData(ValueInput input) {
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    protected void addAdditionalSaveData(ValueOutput output) {
     }
 
     @Override
