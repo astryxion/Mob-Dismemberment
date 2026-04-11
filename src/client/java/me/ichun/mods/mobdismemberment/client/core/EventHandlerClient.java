@@ -166,7 +166,19 @@ public class EventHandlerClient {
 
         // Spawn blood particles
         if (Config.getBlood()) {
-            for (int k = 0; k < (explo != null ? Config.getBloodCount() * 10 : Config.getBloodCount()); k++) {
+            int bloodIterations;
+            float explosionSprayMult = 0f;
+            if (explo == null) {
+                bloodIterations = Config.getBloodCount();
+            } else if (explo instanceof Creeper) {
+                bloodIterations = Math.min(Config.getBloodCount() * 2, 96);
+                explosionSprayMult = 6.0F;
+            } else {
+                bloodIterations = Math.min(Config.getBloodCount() * 10, 450);
+                explosionSprayMult = 100.0F;
+            }
+
+            for (int k = 0; k < bloodIterations; k++) {
                 float var4 = 0.3F;
                 double mX = (double) (-Mth.sin(living.getYRot() / 180.0F * (float) Math.PI) * Mth.cos(living.getXRot() / 180.0F * (float) Math.PI) * var4);
                 double mZ = (double) (Mth.cos(living.getYRot() / 180.0F * (float) Math.PI) * Mth.cos(living.getXRot() / 180.0F * (float) Math.PI) * var4);
@@ -176,7 +188,7 @@ public class EventHandlerClient {
                 var4 *= living.getRandom().nextFloat();
 
                 if (explo != null) {
-                    var4 *= 100D;
+                    var4 *= explosionSprayMult;
                 }
 
                 mX += Math.cos((double) var5) * (double) var4;

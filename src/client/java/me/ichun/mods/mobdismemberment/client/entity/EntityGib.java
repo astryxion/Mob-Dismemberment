@@ -124,6 +124,7 @@ public class EntityGib extends Entity {
                 mag = 1.0D;
             }
             mag = Math.pow(mag, 2) * 0.2D;
+            mag = Math.min(mag, 48.0D);
 
             double mag2 = posY - explo.getY();
             motionX *= mag;
