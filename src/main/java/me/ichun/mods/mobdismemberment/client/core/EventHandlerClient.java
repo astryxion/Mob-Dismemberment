@@ -164,9 +164,23 @@ public class EventHandlerClient {
             addClientEntity(world, new EntityGib(world, living, partData, explo));
         }
 
-        // Spawn blood particles
+        // Spawn blood particles (creeper blasts use a lighter path than TNT-scale explosions)
         if (Config.BLOOD.get()) {
-            for (int k = 0; k < (explo != null ? Config.BLOOD_COUNT.get() * 10 : Config.BLOOD_COUNT.get()); k++) {
+            int bloodCount = Config.BLOOD_COUNT.get();
+            int bloodIterations;
+            double sprayMult;
+            if (explo == null) {
+                bloodIterations = bloodCount;
+                sprayMult = 1.0D;
+            } else if (explo instanceof Creeper) {
+                bloodIterations = Math.min(bloodCount * 2, 96);
+                sprayMult = 6.0D;
+            } else {
+                bloodIterations = Math.min(bloodCount * 10, 450);
+                sprayMult = 100.0D;
+            }
+
+            for (int k = 0; k < bloodIterations; k++) {
                 float var4 = 0.3F;
                 double mX = (double) (-Mth.sin(living.getYRot() / 180.0F * (float) Math.PI) * Mth.cos(living.getXRot() / 180.0F * (float) Math.PI) * var4);
                 double mZ = (double) (Mth.cos(living.getYRot() / 180.0F * (float) Math.PI) * Mth.cos(living.getXRot() / 180.0F * (float) Math.PI) * var4);
@@ -176,7 +190,7 @@ public class EventHandlerClient {
                 var4 *= living.getRandom().nextFloat();
 
                 if (explo != null) {
-                    var4 *= 100D;
+                    var4 *= (float) sprayMult;
                 }
 
                 mX += Math.cos((double) var5) * (double) var4;
