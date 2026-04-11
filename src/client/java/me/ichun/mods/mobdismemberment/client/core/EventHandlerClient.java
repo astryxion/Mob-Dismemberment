@@ -18,14 +18,19 @@ import net.minecraft.world.entity.vehicle.minecart.MinecartTNT;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 
 public class EventHandlerClient {
+    /** Upper bound for blood particles when an explosion source is linked (avoids thousands per mob). */
+    private static final int MAX_BLOOD_PARTICLES_WITH_EXPLOSION = 450;
+
     public HashMap<LivingEntity, Integer> dismemberTimeout = new HashMap<>();
     public HashMap<Entity, Integer> exploTime = new HashMap<>();
-    public ArrayList<Entity> explosionSources = new ArrayList<>();
+    public Set<Entity> explosionSources = new HashSet<>();
     public ArrayList<EntityGib> activeGibs = new ArrayList<>();
 
     public void register() {
@@ -62,9 +67,7 @@ public class EventHandlerClient {
 
                 for (Entity ent : world.entitiesForRendering()) {
                     if (ent instanceof Creeper || ent instanceof PrimedTnt || ent instanceof MinecartTNT) {
-                        if (!explosionSources.contains(ent)) {
-                            explosionSources.add(ent);
-                        }
+                        explosionSources.add(ent);
                     }
                     // Detect death for any LivingEntity except players
                     if (ent instanceof LivingEntity living
@@ -75,25 +78,17 @@ public class EventHandlerClient {
                     }
                 }
 
-                for (int i = explosionSources.size() - 1; i >= 0; i--) {
-                    Entity ent = explosionSources.get(i);
-                    if (ent.isRemoved()) {
-                        if (ent instanceof Creeper creeper) {
-                            // Use getSwelling to check if creeper is about to explode
-                            // getSwelling returns a value from 0 to 1 representing the explosion progress
-                            float swellProgress = creeper.getSwelling(0);
-                            if (swellProgress >= 0.95f) { // About to explode
-                                if (!exploTime.containsKey(ent)) {
-                                    int time = MobDismembermentClient.clientTicks % 24000;
-                                    if (time > 23959) {
-                                        time -= 23999;
-                                    }
-                                    exploTime.put(ent, time);
-                                }
-
-                                dismemberTimeout.put(creeper, 2);
-                            }
-                        } else if (ent instanceof PrimedTnt || ent instanceof MinecartTNT) {
+                Iterator<Entity> explosionIt = explosionSources.iterator();
+                while (explosionIt.hasNext()) {
+                    Entity ent = explosionIt.next();
+                    if (!ent.isRemoved()) {
+                        continue;
+                    }
+                    if (ent instanceof Creeper creeper) {
+                        // Use getSwelling to check if creeper is about to explode
+                        // getSwelling returns a value from 0 to 1 representing the explosion progress
+                        float swellProgress = creeper.getSwelling(0);
+                        if (swellProgress >= 0.95f) { // About to explode
                             if (!exploTime.containsKey(ent)) {
                                 int time = MobDismembermentClient.clientTicks % 24000;
                                 if (time > 23959) {
@@ -101,10 +96,20 @@ public class EventHandlerClient {
                                 }
                                 exploTime.put(ent, time);
                             }
-                        }
 
-                        explosionSources.remove(i);
+                            dismemberTimeout.put(creeper, 2);
+                        }
+                    } else if (ent instanceof PrimedTnt || ent instanceof MinecartTNT) {
+                        if (!exploTime.containsKey(ent)) {
+                            int time = MobDismembermentClient.clientTicks % 24000;
+                            if (time > 23959) {
+                                time -= 23999;
+                            }
+                            exploTime.put(ent, time);
+                        }
                     }
+
+                    explosionIt.remove();
                 }
 
                 Iterator<Entry<LivingEntity, Integer>> ite = dismemberTimeout.entrySet().iterator();
@@ -166,7 +171,16 @@ public class EventHandlerClient {
 
         // Spawn blood particles
         if (Config.getBlood()) {
-            for (int k = 0; k < (explo != null ? Config.getBloodCount() * 10 : Config.getBloodCount()); k++) {
+            int bloodParticles;
+            if (explo == null) {
+                bloodParticles = Config.getBloodCount();
+            } else if (explo instanceof Creeper) {
+                // Creeper blast: many mobs + the creeper match this branch; ×10 and ×100 velocity was killing FPS.
+                bloodParticles = Math.min(Config.getBloodCount() * 2, 96);
+            } else {
+                bloodParticles = Math.min(Config.getBloodCount() * 10, MAX_BLOOD_PARTICLES_WITH_EXPLOSION);
+            }
+            for (int k = 0; k < bloodParticles; k++) {
                 float var4 = 0.3F;
                 double mX = (double) (-Mth.sin(living.getYRot() / 180.0F * (float) Math.PI) * Mth.cos(living.getXRot() / 180.0F * (float) Math.PI) * var4);
                 double mZ = (double) (Mth.cos(living.getYRot() / 180.0F * (float) Math.PI) * Mth.cos(living.getXRot() / 180.0F * (float) Math.PI) * var4);
@@ -175,7 +189,9 @@ public class EventHandlerClient {
                 float var5 = living.getRandom().nextFloat() * (float) Math.PI * 2.0F;
                 var4 *= living.getRandom().nextFloat();
 
-                if (explo != null) {
+                if (explo instanceof Creeper) {
+                    var4 *= 6.0F;
+                } else if (explo != null) {
                     var4 *= 100D;
                 }
 

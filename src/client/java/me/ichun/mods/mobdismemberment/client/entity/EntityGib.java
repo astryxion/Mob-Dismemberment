@@ -124,6 +124,9 @@ public class EntityGib extends Entity {
                 mag = 1.0D;
             }
             mag = Math.pow(mag, 2) * 0.2D;
+            // When the victim is on top of the explosion source (e.g. the creeper's own parts), dist is tiny and mag
+            // becomes astronomical, which tanks the client. Same singularity hurts mobs hugging the creeper.
+            mag = Math.min(mag, 48.0D);
 
             double mag2 = posY - explo.getY();
             motionX *= mag;
