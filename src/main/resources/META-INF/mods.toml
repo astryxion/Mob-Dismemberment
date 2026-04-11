@@ -1,0 +1,28 @@
+modLoader = "javafml"
+loaderVersion = "[47,)"
+license = "All Rights Reserved"
+issueTrackerURL = "https://github.com/astryxion23/Mob-Dismemberment/issues"
+
+[[mods]]
+modId = "mobdismemberment"
+version = "${file.jarVersion}"
+displayName = "Mob Dismemberment"
+displayURL = "https://github.com/astryxion23/Mob-Dismemberment"
+authors = "Astryxion"
+description = '''
+Dismember mobs! When zombies, skeletons, and creepers die, they fall apart into pieces.
+'''
+
+[[dependencies.mobdismemberment]]
+modId = "forge"
+mandatory = true
+versionRange = "[47,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.mobdismemberment]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.20.1,1.21)"
+ordering = "NONE"
+side = "BOTH"

@@ -7,51 +7,54 @@ import me.ichun.mods.mobdismemberment.client.render.RenderGib;
 import me.ichun.mods.mobdismemberment.common.core.Config;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.ModConfig;
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.fml.loading.FMLEnvironment;
-import net.neoforged.neoforge.client.event.EntityRenderersEvent;
-import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
 
 @Mod(MobDismemberment.MOD_ID)
 public class MobDismemberment {
     public static final String MOD_ID = "mobdismemberment";
     public static final String MOD_NAME = "Mob Dismemberment";
 
-    public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(Registries.ENTITY_TYPE, MOD_ID);
-    public static final DeferredRegister<ParticleType<?>> PARTICLE_TYPES = DeferredRegister.create(Registries.PARTICLE_TYPE, MOD_ID);
+    public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, MOD_ID);
+    public static final DeferredRegister<ParticleType<?>> PARTICLE_TYPES = DeferredRegister.create(ForgeRegistries.PARTICLE_TYPES, MOD_ID);
 
-    public static final DeferredHolder<EntityType<?>, EntityType<EntityGib>> GIB_ENTITY = ENTITY_TYPES.register("gib",
+    public static final RegistryObject<EntityType<EntityGib>> GIB_ENTITY = ENTITY_TYPES.register("gib",
             () -> EntityType.Builder.<EntityGib>of(EntityGib::new, MobCategory.MISC)
                     .sized(0.5F, 0.5F)
                     .clientTrackingRange(64)
                     .updateInterval(1)
                     .noSave()
                     .noSummon()
-                    .build(ResourceLocation.fromNamespaceAndPath(MOD_ID, "gib").toString()));
+                    .build(new ResourceLocation(MOD_ID, "gib").toString()));
 
-    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> BLOOD_PARTICLE = PARTICLE_TYPES.register("blood",
+    public static final RegistryObject<SimpleParticleType> BLOOD_PARTICLE = PARTICLE_TYPES.register("blood",
             () -> new SimpleParticleType(false));
 
     public static EventHandlerClient eventHandlerClient;
     public static int clientTicks = 0;
 
-    public MobDismemberment(IEventBus modEventBus, ModContainer modContainer) {
+    public MobDismemberment() {
+        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+
         ENTITY_TYPES.register(modEventBus);
         PARTICLE_TYPES.register(modEventBus);
 
-        modContainer.registerConfig(ModConfig.Type.CLIENT, Config.SPEC);
+        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, Config.SPEC);
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
             modEventBus.addListener(this::clientSetup);
@@ -62,7 +65,7 @@ public class MobDismemberment {
 
     private void clientSetup(final FMLClientSetupEvent event) {
         eventHandlerClient = new EventHandlerClient();
-        NeoForge.EVENT_BUS.register(eventHandlerClient);
+        MinecraftForge.EVENT_BUS.register(eventHandlerClient);
     }
 
     private void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {

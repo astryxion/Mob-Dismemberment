@@ -13,10 +13,10 @@ import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.MinecartTNT;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -47,8 +47,8 @@ public class EventHandlerClient {
     }
 
     @SubscribeEvent
-    public void worldTick(ClientTickEvent.Post event) {
-        if (Minecraft.getInstance().level != null) {
+    public void worldTick(TickEvent.ClientTickEvent event) {
+        if (event.phase == TickEvent.Phase.END && Minecraft.getInstance().level != null) {
             Minecraft mc = Minecraft.getInstance();
             ClientLevel world = mc.level;
 
@@ -56,7 +56,7 @@ public class EventHandlerClient {
 
             if (!mc.isPaused()) {
                 // Clean up removed gibs from our tracking list
-                // Note: We don't manually tick - ClientLevel.addEntity adds them to the world's tick list
+                // Note: We don't manually tick - putNonPlayerEntity adds them to the world's tick list
                 activeGibs.removeIf(Entity::isRemoved);
 
                 for (Entity ent : world.entitiesForRendering()) {
@@ -198,11 +198,11 @@ public class EventHandlerClient {
 
     /**
      * Add a client-side only entity to the world.
-     * Uses ClientLevel.addEntity (replaces putNonPlayerEntity removed after 1.20.x).
+     * Uses putNonPlayerEntity which is the method used for entities received from the server.
      * Also adds to our activeGibs list for manual ticking.
      */
     private void addClientEntity(ClientLevel world, EntityGib entity) {
-        world.addEntity(entity);
+        world.putNonPlayerEntity(entity.getId(), entity);
         activeGibs.add(entity);
     }
 }

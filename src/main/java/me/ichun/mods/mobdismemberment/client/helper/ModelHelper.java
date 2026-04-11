@@ -85,7 +85,7 @@ public class ModelHelper {
         } catch (Exception e) {
             // Failed to get texture
         }
-        return ResourceLocation.withDefaultNamespace("textures/entity/zombie/zombie.png");
+        return new ResourceLocation("textures/entity/zombie/zombie.png");
     }
 
     /**

@@ -1,17 +1,17 @@
 package me.ichun.mods.mobdismemberment.common.core;
 
-import net.neoforged.neoforge.common.ModConfigSpec;
+import net.minecraftforge.common.ForgeConfigSpec;
 
 public class Config {
-    public static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
-    public static final ModConfigSpec SPEC;
+    public static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
+    public static final ForgeConfigSpec SPEC;
 
-    public static final ModConfigSpec.IntValue GIB_TIME;
-    public static final ModConfigSpec.IntValue GIB_GROUND_TIME;
-    public static final ModConfigSpec.BooleanValue BLOOD;
-    public static final ModConfigSpec.IntValue BLOOD_COUNT;
-    public static final ModConfigSpec.BooleanValue GREEN_BLOOD;
-    public static final ModConfigSpec.BooleanValue GIB_PUSHING;
+    public static final ForgeConfigSpec.IntValue GIB_TIME;
+    public static final ForgeConfigSpec.IntValue GIB_GROUND_TIME;
+    public static final ForgeConfigSpec.BooleanValue BLOOD;
+    public static final ForgeConfigSpec.IntValue BLOOD_COUNT;
+    public static final ForgeConfigSpec.BooleanValue GREEN_BLOOD;
+    public static final ForgeConfigSpec.BooleanValue GIB_PUSHING;
 
     static {
         BUILDER.comment("Client-side configuration for Mob Dismemberment");
