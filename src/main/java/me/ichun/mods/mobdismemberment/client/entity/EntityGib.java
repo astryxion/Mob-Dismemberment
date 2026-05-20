@@ -1,6 +1,7 @@
 package me.ichun.mods.mobdismemberment.client.entity;
 
 import me.ichun.mods.mobdismemberment.client.helper.ModelHelper;
+import me.ichun.mods.mobdismemberment.client.MobDismembermentClient;
 import me.ichun.mods.mobdismemberment.common.MobDismemberment;
 import me.ichun.mods.mobdismemberment.common.core.Config;
 import net.minecraft.client.Minecraft;
@@ -56,7 +57,7 @@ public class EntityGib extends Entity {
         super(entityType, level);
         this.setId(CLIENT_ID_COUNTER.getAndDecrement());
         groundTime = 0;
-        liveTime = MobDismemberment.clientTicks;
+        liveTime = MobDismembermentClient.clientTicks;
         noCulling = true;
         noPhysics = false;
     }
@@ -65,7 +66,7 @@ public class EntityGib extends Entity {
      * Create a gib from a specific model part of a dying entity.
      */
     public EntityGib(Level level, LivingEntity parent, ModelHelper.PartData partData, Entity explo) {
-        this(MobDismemberment.GIB_ENTITY.get(), level);
+        this(MobDismembermentClient.GIB_ENTITY.get(), level);
 
         // Store the model part and texture
         this.modelPart = partData.part;
@@ -82,7 +83,7 @@ public class EntityGib extends Entity {
         this.centerY = partData.centerY;
         this.centerZ = partData.centerZ;
 
-        liveTime = MobDismemberment.clientTicks;
+        liveTime = MobDismembermentClient.clientTicks;
 
         // Calculate spawn position based on part offset
         double posX = parent.getX() + partOffsetX;
@@ -208,7 +209,7 @@ public class EntityGib extends Entity {
             groundTime = 0;
         }
 
-        if (liveTime + Config.GIB_TIME.get() < MobDismemberment.clientTicks) {
+        if (liveTime + Config.GIB_TIME.get() < MobDismembermentClient.clientTicks) {
             discard();
         }
     }

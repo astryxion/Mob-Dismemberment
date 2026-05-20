@@ -2,6 +2,7 @@ package me.ichun.mods.mobdismemberment.client.core;
 
 import me.ichun.mods.mobdismemberment.client.entity.EntityGib;
 import me.ichun.mods.mobdismemberment.client.helper.ModelHelper;
+import me.ichun.mods.mobdismemberment.client.MobDismembermentClient;
 import me.ichun.mods.mobdismemberment.common.MobDismemberment;
 import me.ichun.mods.mobdismemberment.common.core.Config;
 import net.minecraft.client.Minecraft;
@@ -52,7 +53,7 @@ public class EventHandlerClient {
             Minecraft mc = Minecraft.getInstance();
             ClientLevel world = mc.level;
 
-            MobDismemberment.clientTicks++;
+            MobDismembermentClient.clientTicks++;
 
             if (!mc.isPaused()) {
                 // Clean up removed gibs from our tracking list
@@ -83,7 +84,7 @@ public class EventHandlerClient {
                             float swellProgress = creeper.getSwelling(0);
                             if (swellProgress >= 0.95f) { // About to explode
                                 if (!exploTime.containsKey(ent)) {
-                                    int time = MobDismemberment.clientTicks % 24000;
+                                    int time = MobDismembermentClient.clientTicks % 24000;
                                     if (time > 23959) {
                                         time -= 23999;
                                     }
@@ -94,7 +95,7 @@ public class EventHandlerClient {
                             }
                         } else if (ent instanceof PrimedTnt || ent instanceof MinecartTNT) {
                             if (!exploTime.containsKey(ent)) {
-                                int time = MobDismemberment.clientTicks % 24000;
+                                int time = MobDismembermentClient.clientTicks % 24000;
                                 if (time > 23959) {
                                     time -= 23999;
                                 }
@@ -135,7 +136,7 @@ public class EventHandlerClient {
                 }
 
                 Iterator<Entry<Entity, Integer>> ite1 = exploTime.entrySet().iterator();
-                int worldTime = MobDismemberment.clientTicks % 24000;
+                int worldTime = MobDismembermentClient.clientTicks % 24000;
                 while (ite1.hasNext()) {
                     Entry<Entity, Integer> e = ite1.next();
                     if (e.getValue() + 40 < worldTime) {
