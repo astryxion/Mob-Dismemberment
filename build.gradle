@@ -6,7 +6,7 @@ plugins {
     id 'net.minecraftforge.gradle' version '[6.0.16,6.2)'
 }
 
-version = '1.20.1-1.1.0'
+version = '1.20.1-1.2.0'
 group = 'me.ichun.mods.mobdismemberment'
 
 base {
@@ -56,6 +56,22 @@ minecraft {
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
+tasks.named('processResources', ProcessResources).configure {
+    var replaceProperties = [
+            mod_id     : mod_id,
+            mod_name   : mod_name,
+            mod_version: project.version,
+            mod_license: mod_license,
+            mod_authors: mod_authors,
+            mod_credits: mod_credits
+    ]
+    inputs.properties replaceProperties
+
+    filesMatching(['META-INF/mods.toml']) {
+        expand replaceProperties
+    }
+}
+
 repositories {
     maven { url = 'https://maven.minecraftforge.net/' }
     mavenCentral()
@@ -68,21 +84,23 @@ dependencies {
 tasks.named('jar', Jar).configure {
     manifest {
         attributes([
-                'Specification-Title'     : 'MobDismemberment',
-                'Specification-Vendor'    : 'iChun',
+                'Specification-Title'     : mod_name,
+                'Specification-Vendor'    : mod_authors,
                 'Specification-Version'   : '1',
                 'Implementation-Title'    : project.name,
                 'Implementation-Version'  : project.jar.archiveVersion,
-                'Implementation-Vendor'   : 'iChun',
+                'Implementation-Vendor'   : mod_authors,
                 'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
     }
-    finalizedBy 'reobfJar'
-}
 
-tasks.named('jar', Jar).configure {
+    from('License') {
+        rename { 'LICENSE' }
+    }
+
     from sourceSets.main.output
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    finalizedBy 'reobfJar'
 }
 
 tasks.withType(JavaCompile).configureEach {

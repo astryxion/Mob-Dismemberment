@@ -1,15 +1,18 @@
 modLoader="javafml"
 loaderVersion="${loader_version_range}"
 license="${mod_license}"
-issueTrackerURL="https://github.com/iChun/MobDismemberment/issues"
+issueTrackerURL="https://github.com/astryxion23/Mob-Dismemberment/issues"
 
 [[mods]]
 modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
-authors="Astryxion"
+displayURL="https://github.com/astryxion23/Mob-Dismemberment"
+authors="${mod_authors}"
 description='''
 Dismember mobs! When zombies, skeletons, and creepers die, they fall apart into pieces.
+
+Credits: ${mod_credits}
 '''
 
 [[dependencies.${mod_id}]]
