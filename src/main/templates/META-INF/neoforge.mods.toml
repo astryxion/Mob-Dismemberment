@@ -7,7 +7,8 @@ issueTrackerURL="https://github.com/iChun/MobDismemberment/issues"
 modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
-authors="Astryxion"
+authors="${mod_authors}"
+credits="${mod_credits}"
 description='''
 Dismember mobs! When zombies, skeletons, and creepers die, they fall apart into pieces.
 '''
