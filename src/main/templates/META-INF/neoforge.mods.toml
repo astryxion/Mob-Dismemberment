@@ -10,6 +10,10 @@ displayName="${mod_name}"
 authors="Astryxion"
 description='''
 Dismember mobs! When zombies, skeletons, and creepers die, they fall apart into pieces.
+
+Author: Astryxion
+Credits: Astryxion, iChun, ThatSoulyGuy
+License: GNU Lesser General Public License v3.0
 '''
 
 [[dependencies.${mod_id}]]
