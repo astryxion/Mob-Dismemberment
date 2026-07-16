@@ -7,8 +7,12 @@
 	"authors": [
 		"Astryxion"
 	],
+	"contributors": [
+		"iChun",
+		"ThatSoulyGuy"
+	],
 	"contact": {},
-	"license": "All-Rights-Reserved",
+	"license": "${license}",
 	"environment": "client",
 	"entrypoints": {
 		"client": [

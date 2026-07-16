@@ -8,6 +8,7 @@ modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
 authors="Astryxion"
+credits="Astryxion, iChun, ThatSoulyGuy"
 description='''
 Dismember mobs! When zombies, skeletons, and creepers die, they fall apart into pieces.
 '''
