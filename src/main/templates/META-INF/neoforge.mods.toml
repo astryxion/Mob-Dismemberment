@@ -9,8 +9,11 @@ version="${mod_version}"
 displayName="${mod_name}"
 authors="Astryxion"
 credits="Astryxion, iChun, ThatSoulyGuy"
+# Client-only visual mod: do not require it on the dedicated server / matching versions.
+displayTest="IGNORE_ALL_VERSION"
 description='''
 Dismember mobs! When zombies, skeletons, and creepers die, they fall apart into pieces.
+Client-side only — safe to omit from dedicated servers (install on clients for the effect).
 '''
 
 [[dependencies.${mod_id}]]
@@ -18,11 +21,11 @@ modId="neoforge"
 type="required"
 versionRange="${neo_version_range}"
 ordering="NONE"
-side="BOTH"
+side="CLIENT"
 
 [[dependencies.${mod_id}]]
 modId="minecraft"
 type="required"
 versionRange="${minecraft_version_range}"
 ordering="NONE"
-side="BOTH"
+side="CLIENT"
