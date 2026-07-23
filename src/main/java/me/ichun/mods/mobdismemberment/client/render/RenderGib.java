@@ -2,7 +2,7 @@ package me.ichun.mods.mobdismemberment.client.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
+import com.mojang.math.Vector3f;
 import me.ichun.mods.mobdismemberment.client.entity.EntityGib;
 import me.ichun.mods.mobdismemberment.common.core.Config;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -11,11 +11,10 @@ import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.FastColor;
 import net.minecraft.util.Mth;
 
 public class RenderGib extends EntityRenderer<EntityGib> {
-    private static final ResourceLocation FALLBACK_TEXTURE = ResourceLocation.withDefaultNamespace("textures/entity/zombie/zombie.png");
+    private static final ResourceLocation FALLBACK_TEXTURE = new ResourceLocation("textures/entity/zombie/zombie.png");
 
     public RenderGib(EntityRendererProvider.Context context) {
         super(context);
@@ -49,8 +48,8 @@ public class RenderGib extends EntityRenderer<EntityGib> {
         float yaw = gib.getInterpolatedYaw(partialTicks);
         float pitch = gib.getInterpolatedPitch(partialTicks);
 
-        poseStack.mulPose(Axis.YP.rotationDegrees(-yaw));
-        poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
+        poseStack.mulPose(Vector3f.YP.rotationDegrees(-yaw));
+        poseStack.mulPose(Vector3f.XP.rotationDegrees(pitch));
 
         // Flip model (standard for entity rendering)
         poseStack.scale(-1.0F, -1.0F, 1.0F);
@@ -81,8 +80,7 @@ public class RenderGib extends EntityRenderer<EntityGib> {
         gib.modelPart.zRot = 0;
 
         // Render the stored model part
-        int rgba = FastColor.ARGB32.color(Mth.floor(alpha * 255.0F), 255, 255, 255);
-        gib.modelPart.render(poseStack, vertexConsumer, packedLight, OverlayTexture.NO_OVERLAY, rgba);
+        gib.modelPart.render(poseStack, vertexConsumer, packedLight, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, alpha);
 
         // Restore original values
         gib.modelPart.x = origX;

@@ -1,13 +1,13 @@
 package me.ichun.mods.mobdismemberment.client.entity;
 
-import me.ichun.mods.mobdismemberment.client.helper.ModelHelper;
 import me.ichun.mods.mobdismemberment.client.MobDismembermentClient;
+import me.ichun.mods.mobdismemberment.client.helper.ModelHelper;
 import me.ichun.mods.mobdismemberment.common.MobDismemberment;
 import me.ichun.mods.mobdismemberment.common.core.Config;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.network.protocol.Packet;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -19,6 +19,7 @@ import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.vehicle.MinecartTNT;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.network.NetworkHooks;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -57,7 +58,7 @@ public class EntityGib extends Entity {
         super(entityType, level);
         this.setId(CLIENT_ID_COUNTER.getAndDecrement());
         groundTime = 0;
-        liveTime = MobDismembermentClient.clientTicks;
+        liveTime = MobDismemberment.clientTicks;
         noCulling = true;
         noPhysics = false;
     }
@@ -83,7 +84,7 @@ public class EntityGib extends Entity {
         this.centerY = partData.centerY;
         this.centerZ = partData.centerZ;
 
-        liveTime = MobDismembermentClient.clientTicks;
+        liveTime = MobDismemberment.clientTicks;
 
         // Calculate spawn position based on part offset
         double posX = parent.getX() + partOffsetX;
@@ -170,7 +171,7 @@ public class EntityGib extends Entity {
             yawSpin = 0.0F;
         }
 
-        if (onGround() || isInWater()) {
+        if (isOnGround() || isInWater()) {
             setXRot(getXRot() + (-90F - (getXRot() % 360F)) / 2);
             motionY *= 0.8D;
             motionX *= 0.8D;
@@ -198,7 +199,7 @@ public class EntityGib extends Entity {
         }
 
         // Lifetime management
-        if (onGround() || isInWater()) {
+        if (isOnGround() || isInWater()) {
             groundTime++;
             if (groundTime > Config.GIB_GROUND_TIME.get() + 20) {
                 discard();
@@ -209,7 +210,7 @@ public class EntityGib extends Entity {
             groundTime = 0;
         }
 
-        if (liveTime + Config.GIB_TIME.get() < MobDismembermentClient.clientTicks) {
+        if (liveTime + Config.GIB_TIME.get() < MobDismemberment.clientTicks) {
             discard();
         }
     }
@@ -249,7 +250,13 @@ public class EntityGib extends Entity {
     }
 
     @Override
-    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+    protected void defineSynchedData() {
+    }
+
+    @Override
+    public Packet<?> getAddEntityPacket() {
+        // Client-only gibs are never spawned from the server; required abstract API on 1.18.2.
+        return NetworkHooks.getEntitySpawningPacket(this);
     }
 
     @Override
