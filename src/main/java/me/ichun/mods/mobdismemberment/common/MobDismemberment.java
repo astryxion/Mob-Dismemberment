@@ -14,14 +14,13 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
-@Mod(MobDismemberment.MOD_ID)
+@Mod(value = MobDismemberment.MOD_ID, dist = Dist.CLIENT)
 public class MobDismemberment {
     public static final String MOD_ID = "mobdismemberment";
     public static final String MOD_NAME = "Mob Dismemberment";
@@ -36,12 +35,10 @@ public class MobDismemberment {
 
         modContainer.registerConfig(ModConfig.Type.CLIENT, Config.SPEC);
 
-        if (FMLEnvironment.dist == Dist.CLIENT) {
-            MobDismembermentClient.register(modEventBus);
-            modEventBus.addListener(this::clientSetup);
-            modEventBus.addListener(this::registerEntityRenderers);
-            modEventBus.addListener(this::registerParticleProviders);
-        }
+        MobDismembermentClient.register(modEventBus);
+        modEventBus.addListener(this::clientSetup);
+        modEventBus.addListener(this::registerEntityRenderers);
+        modEventBus.addListener(this::registerParticleProviders);
     }
 
     private void clientSetup(final FMLClientSetupEvent event) {
