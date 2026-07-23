@@ -1,0 +1,31 @@
+modLoader = "javafml"
+loaderVersion = "[40,)"
+license = "${mod_license}"
+issueTrackerURL = "https://github.com/astryxion23/Mob-Dismemberment/issues"
+
+[[mods]]
+modId = "${mod_id}"
+version = "${mod_version}"
+displayName = "${mod_name}"
+displayURL = "https://github.com/astryxion23/Mob-Dismemberment"
+authors = "${mod_authors}"
+description = '''
+Dismember mobs! When zombies, skeletons, and creepers die, they fall apart into pieces.
+Client-side only — safe to omit from dedicated servers (install on clients for the effect).
+
+Credits: ${mod_credits}
+'''
+
+[[dependencies.mobdismemberment]]
+modId = "forge"
+mandatory = true
+versionRange = "[40,)"
+ordering = "NONE"
+side = "CLIENT"
+
+[[dependencies.mobdismemberment]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.18.2,1.19)"
+ordering = "NONE"
+side = "CLIENT"

@@ -1,0 +1,13 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"refmap": "client-mobdismemberment.refmap.json",
+	"package": "me.ichun.mods.mobdismemberment.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"LivingEntityMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

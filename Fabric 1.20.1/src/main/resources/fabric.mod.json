@@ -1,0 +1,31 @@
+{
+	"schemaVersion": 1,
+	"id": "mobdismemberment",
+	"version": "${version}",
+	"name": "Mob Dismemberment",
+	"description": "Client-side mob dismemberment effects. Safe to omit from dedicated servers (install on clients for the effect).",
+	"authors": [
+		"Astryxion"
+	],
+	"contributors": [
+		"iChun",
+		"ThatSoulyGuy"
+	],
+	"contact": {},
+	"license": "${license}",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"me.ichun.mods.mobdismemberment.client.MobDismembermentClient"
+		]
+	},
+	"mixins": [
+		"mobdismemberment.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.14.21",
+		"minecraft": "~1.20.1",
+		"java": ">=17",
+		"fabric-api": "*"
+	}
+}

@@ -1,0 +1,31 @@
+modLoader="javafml"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
+issueTrackerURL="https://github.com/iChun/MobDismemberment/issues"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="${mod_authors}"
+credits="${mod_credits}"
+# Client-only visual mod: do not require it on the dedicated server / matching versions.
+displayTest="IGNORE_ALL_VERSION"
+description='''
+Dismember mobs! When zombies, skeletons, and creepers die, they fall apart into pieces.
+Client-side only — safe to omit from dedicated servers (install on clients for the effect).
+'''
+
+[[dependencies.${mod_id}]]
+modId="neoforge"
+type="required"
+versionRange="[${neo_version},)"
+ordering="NONE"
+side="CLIENT"
+
+[[dependencies.${mod_id}]]
+modId="minecraft"
+type="required"
+versionRange="${minecraft_version_range}"
+ordering="NONE"
+side="CLIENT"
