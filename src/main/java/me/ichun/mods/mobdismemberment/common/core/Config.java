@@ -13,10 +13,13 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * Client-side configuration persisted as JSON under the game config directory.
- * Defaults and validation mirror the former Forge {@code ForgeConfigSpec} definitions.
+ * Defaults and validation mirror the Forge/NeoForge client config definitions.
  */
 public final class Config {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -30,6 +33,7 @@ public final class Config {
     private static volatile int bloodCount = 100;
     private static volatile boolean greenBlood = false;
     private static volatile boolean gibPushing = true;
+    private static volatile String mobBlacklist = "";
 
     private Config() {
     }
@@ -59,6 +63,11 @@ public final class Config {
             if (root.has("gibPushing")) {
                 gibPushing = root.get("gibPushing").getAsBoolean();
             }
+            if (root.has("mobBlacklist")) {
+                mobBlacklist = root.get("mobBlacklist").isJsonNull() ? "" : root.get("mobBlacklist").getAsString();
+            } else {
+                mobBlacklist = "";
+            }
         } catch (Exception ignored) {
             gibTime = 1000;
             gibGroundTime = 100;
@@ -66,6 +75,7 @@ public final class Config {
             bloodCount = 100;
             greenBlood = false;
             gibPushing = true;
+            mobBlacklist = "";
         }
     }
 
@@ -78,6 +88,8 @@ public final class Config {
         root.addProperty("bloodCount", bloodCount);
         root.addProperty("greenBlood", greenBlood);
         root.addProperty("gibPushing", gibPushing);
+        root.addProperty("mobBlacklist", mobBlacklist == null ? "" : mobBlacklist);
+        root.addProperty("_mobBlacklistComment", "Comma-separated entity IDs that should never be dismembered. Example: minecraft:zombie,mutantmonsters:mutant_zombie. Leave empty for none.");
 
         try {
             Files.createDirectories(CONFIG_PATH.getParent());
@@ -118,5 +130,32 @@ public final class Config {
 
     public static boolean getGibPushing() {
         return gibPushing;
+    }
+
+    public static String getMobBlacklistRaw() {
+        return mobBlacklist == null ? "" : mobBlacklist;
+    }
+
+    /**
+     * Parsed blacklist IDs from {@link #mobBlacklist} (lowercase, trimmed, empty entries dropped).
+     * Surrounding quotes on entries are stripped so edits like {@code "minecraft:zombie"} still match.
+     */
+    public static List<String> getMobBlacklist() {
+        String raw = getMobBlacklistRaw();
+        List<String> result = new ArrayList<>();
+        if (raw.isBlank() || "none".equalsIgnoreCase(raw.trim()) || "[]".equals(raw.trim())) {
+            return result;
+        }
+        for (String part : raw.split(",")) {
+            String id = part.trim().toLowerCase(Locale.ROOT);
+            if (id.length() >= 2
+                    && ((id.startsWith("\"") && id.endsWith("\"")) || (id.startsWith("'") && id.endsWith("'")))) {
+                id = id.substring(1, id.length() - 1).trim();
+            }
+            if (!id.isEmpty()) {
+                result.add(id);
+            }
+        }
+        return result;
     }
 }

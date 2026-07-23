@@ -7,7 +7,6 @@ import me.ichun.mods.mobdismemberment.client.render.RenderGib;
 import me.ichun.mods.mobdismemberment.common.MobDismemberment;
 import me.ichun.mods.mobdismemberment.common.core.Config;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
@@ -32,7 +31,7 @@ public class MobDismembermentClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         Config.load();
-        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> Config.save());
+        // Do not rewrite the JSON on quit — that can clobber leave-world → edit → rejoin changes.
 
         Identifier gibId = Identifier.fromNamespaceAndPath(MobDismemberment.MOD_ID, "gib");
         ResourceKey<EntityType<?>> gibKey = ResourceKey.create(Registries.ENTITY_TYPE, gibId);
