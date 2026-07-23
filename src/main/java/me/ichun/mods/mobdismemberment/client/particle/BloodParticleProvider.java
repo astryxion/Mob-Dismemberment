@@ -1,20 +1,20 @@
 package me.ichun.mods.mobdismemberment.client.particle;
 
-import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.particle.IAnimatedSprite;
+import net.minecraft.client.particle.IParticleFactory;
 import net.minecraft.client.particle.Particle;
-import net.minecraft.client.particle.ParticleProvider;
-import net.minecraft.client.particle.SpriteSet;
-import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.client.world.ClientWorld;
+import net.minecraft.particles.BasicParticleType;
 
-public class BloodParticleProvider implements ParticleProvider<SimpleParticleType> {
-    private final SpriteSet sprites;
+public class BloodParticleProvider implements IParticleFactory<BasicParticleType> {
+    private final IAnimatedSprite sprites;
 
-    public BloodParticleProvider(SpriteSet sprites) {
+    public BloodParticleProvider(IAnimatedSprite sprites) {
         this.sprites = sprites;
     }
 
     @Override
-    public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
+    public Particle createParticle(BasicParticleType type, ClientWorld level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
         return new ParticleBlood(level, x, y, z, xSpeed, ySpeed, zSpeed, false, sprites);
     }
 }

@@ -1,24 +1,23 @@
 package me.ichun.mods.mobdismemberment.client.render;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
+import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.IVertexBuilder;
 import me.ichun.mods.mobdismemberment.client.entity.EntityGib;
 import me.ichun.mods.mobdismemberment.common.core.Config;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;
-import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.EntityRendererManager;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.FastColor;
-import net.minecraft.util.Mth;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.vector.Vector3f;
 
 public class RenderGib extends EntityRenderer<EntityGib> {
-    private static final ResourceLocation FALLBACK_TEXTURE = ResourceLocation.withDefaultNamespace("textures/entity/zombie/zombie.png");
+    private static final ResourceLocation FALLBACK_TEXTURE = new ResourceLocation("textures/entity/zombie/zombie.png");
 
-    public RenderGib(EntityRendererProvider.Context context) {
-        super(context);
+    public RenderGib(EntityRendererManager manager) {
+        super(manager);
     }
 
     @Override
@@ -30,41 +29,34 @@ public class RenderGib extends EntityRenderer<EntityGib> {
     }
 
     @Override
-    public void render(EntityGib gib, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
+    public void render(EntityGib gib, float entityYaw, float partialTicks, MatrixStack poseStack, IRenderTypeBuffer buffer, int packedLight) {
         if (gib.modelPart == null) {
             return;
         }
 
         poseStack.pushPose();
 
-        // Calculate alpha for fade out
-        float alpha = Mth.clamp(
+        float alpha = MathHelper.clamp(
                 gib.groundTime >= Config.GIB_GROUND_TIME.get()
                         ? 1.0F - (gib.groundTime - Config.GIB_GROUND_TIME.get() + partialTicks) / 20F
                         : 1.0F,
                 0F, 1F
         );
 
-        // Apply rotation
         float yaw = gib.getInterpolatedYaw(partialTicks);
         float pitch = gib.getInterpolatedPitch(partialTicks);
 
-        poseStack.mulPose(Axis.YP.rotationDegrees(-yaw));
-        poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
+        poseStack.mulPose(Vector3f.YP.rotationDegrees(-yaw));
+        poseStack.mulPose(Vector3f.XP.rotationDegrees(pitch));
 
-        // Flip model (standard for entity rendering)
         poseStack.scale(-1.0F, -1.0F, 1.0F);
 
-        // Translate to center the geometry at origin (center values are in model units)
-        // This makes the rotation happen around the geometric center
         poseStack.translate(-gib.centerX / 16.0F, -gib.centerY / 16.0F, -gib.centerZ / 16.0F);
 
-        // Get texture and render
         ResourceLocation texture = getTextureLocation(gib);
         RenderType renderType = RenderType.entityTranslucent(texture);
-        VertexConsumer vertexConsumer = buffer.getBuffer(renderType);
+        IVertexBuilder vertexConsumer = buffer.getBuffer(renderType);
 
-        // Save original pivot and rotation values
         float origX = gib.modelPart.x;
         float origY = gib.modelPart.y;
         float origZ = gib.modelPart.z;
@@ -72,7 +64,6 @@ public class RenderGib extends EntityRenderer<EntityGib> {
         float origYRot = gib.modelPart.yRot;
         float origZRot = gib.modelPart.zRot;
 
-        // Zero out pivot and rotation so part renders at its cube positions only
         gib.modelPart.x = 0;
         gib.modelPart.y = 0;
         gib.modelPart.z = 0;
@@ -80,11 +71,8 @@ public class RenderGib extends EntityRenderer<EntityGib> {
         gib.modelPart.yRot = 0;
         gib.modelPart.zRot = 0;
 
-        // Render the stored model part
-        int rgba = FastColor.ARGB32.color(Mth.floor(alpha * 255.0F), 255, 255, 255);
-        gib.modelPart.render(poseStack, vertexConsumer, packedLight, OverlayTexture.NO_OVERLAY, rgba);
+        gib.modelPart.render(poseStack, vertexConsumer, packedLight, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, alpha);
 
-        // Restore original values
         gib.modelPart.x = origX;
         gib.modelPart.y = origY;
         gib.modelPart.z = origZ;

@@ -10,6 +10,6 @@ Dismember mobs! When zombies, skeletons, and creepers die, they fall apart into 
 
 ## License
 
-This project is licensed under the [GNU Lesser General Public License v3.0](LICENSE).
+This project is licensed under the [GNU Lesser General Public License v3.0](License).
 
-See the [LICENSE](LICENSE) file for the full license text.
+See the [License](License) file for the full license text.

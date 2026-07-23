@@ -1,6 +1,6 @@
 {
     "pack": {
-        "pack_format": 48,
-        "description": "Mob Dismemberment"
+        "description": "Mob Dismemberment",
+        "pack_format": 6
     }
 }

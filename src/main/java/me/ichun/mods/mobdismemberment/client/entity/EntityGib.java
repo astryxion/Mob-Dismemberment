@@ -1,63 +1,59 @@
 package me.ichun.mods.mobdismemberment.client.entity;
 
-import me.ichun.mods.mobdismemberment.client.helper.ModelHelper;
 import me.ichun.mods.mobdismemberment.client.MobDismembermentClient;
+import me.ichun.mods.mobdismemberment.client.helper.ModelHelper;
 import me.ichun.mods.mobdismemberment.common.MobDismemberment;
 import me.ichun.mods.mobdismemberment.common.core.Config;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.MoverType;
-import net.minecraft.world.entity.item.PrimedTnt;
-import net.minecraft.world.entity.monster.Creeper;
-import net.minecraft.world.entity.vehicle.MinecartTNT;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.client.renderer.model.ModelRenderer;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.MoverType;
+import net.minecraft.entity.item.TNTEntity;
+import net.minecraft.entity.item.minecart.TNTMinecartEntity;
+import net.minecraft.entity.monster.CreeperEntity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.network.IPacket;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.world.World;
+import net.minecraftforge.fml.network.NetworkHooks;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class EntityGib extends Entity {
-    // Counter for generating unique negative IDs for client-side entities
     private static final AtomicInteger CLIENT_ID_COUNTER = new AtomicInteger(-1);
 
-    // Model part data - stores the actual bone to render
-    public ModelPart modelPart;
+    public ModelRenderer modelPart;
     public ResourceLocation texture;
     public String partName;
 
-    // Position offset from entity center where this part was
     public float partOffsetX;
     public float partOffsetY;
     public float partOffsetZ;
 
-    // Geometric center offset for proper rotation pivot
     public float centerX;
     public float centerY;
     public float centerZ;
 
-    // Physics
     public float pitchSpin;
     public float yawSpin;
     public int groundTime;
     public int liveTime;
     public boolean explosion;
 
-    // Store motion locally since client-side entities may not track deltaMovement properly
     public double motionX;
     public double motionY;
     public double motionZ;
 
-    public EntityGib(EntityType<? extends EntityGib> entityType, Level level) {
+    public EntityGib(EntityType<? extends EntityGib> entityType, World level) {
         super(entityType, level);
         this.setId(CLIENT_ID_COUNTER.getAndDecrement());
         groundTime = 0;
-        liveTime = MobDismembermentClient.clientTicks;
+        liveTime = MobDismemberment.clientTicks;
         noCulling = true;
         noPhysics = false;
     }
@@ -65,43 +61,37 @@ public class EntityGib extends Entity {
     /**
      * Create a gib from a specific model part of a dying entity.
      */
-    public EntityGib(Level level, LivingEntity parent, ModelHelper.PartData partData, Entity explo) {
+    public EntityGib(World level, LivingEntity parent, ModelHelper.PartData partData, Entity explo) {
         this(MobDismembermentClient.GIB_ENTITY.get(), level);
 
-        // Store the model part and texture
         this.modelPart = partData.part;
         this.partName = partData.name;
         this.texture = ModelHelper.getEntityTexture(parent);
 
-        // Store part offsets
         this.partOffsetX = partData.offsetX;
         this.partOffsetY = partData.offsetY;
         this.partOffsetZ = partData.offsetZ;
 
-        // Store geometric center for proper rotation pivot
         this.centerX = partData.centerX;
         this.centerY = partData.centerY;
         this.centerZ = partData.centerZ;
 
-        liveTime = MobDismembermentClient.clientTicks;
+        liveTime = MobDismemberment.clientTicks;
 
-        // Calculate spawn position based on part offset
         double posX = parent.getX() + partOffsetX;
         double posY = parent.getBoundingBox().minY + parent.getBbHeight() / 2.0 + partOffsetY;
         double posZ = parent.getZ() + partOffsetZ;
 
         setPos(posX, posY, posZ);
-        setYRot(parent.yBodyRot);
-        setXRot(parent.getXRot());
-        yRotO = parent.getYRot();
-        xRotO = parent.getXRot();
+        this.yRot = parent.yBodyRot;
+        this.xRot = parent.xRot;
+        yRotO = parent.yRot;
+        xRotO = parent.xRot;
 
-        // Initial velocity with some randomness
         double motionX = parent.getDeltaMovement().x + (random.nextDouble() - random.nextDouble()) * 0.25D;
         double motionY = parent.getDeltaMovement().y + random.nextDouble() * 0.2D;
         double motionZ = parent.getDeltaMovement().z + (random.nextDouble() - random.nextDouble()) * 0.25D;
 
-        // Random spin
         float i = random.nextInt(45) + 5F + random.nextFloat();
         float j = random.nextInt(45) + 5F + random.nextFloat();
         if (random.nextInt(2) == 0) i *= -1;
@@ -109,15 +99,15 @@ public class EntityGib extends Entity {
         pitchSpin = i * (float) (motionY + 0.3D);
         yawSpin = j * (float) (Math.sqrt(Math.abs(motionX * motionZ)) + 0.3D);
 
-        // Handle explosion force
         if (explo != null) {
             double dist = Math.max(explo.distanceTo(parent) / 2D, 0.1D);
             dist = Math.pow(dist, 2);
 
             double mag;
-            if (explo instanceof PrimedTnt || explo instanceof MinecartTNT) {
+            if (explo instanceof TNTEntity || explo instanceof TNTMinecartEntity) {
                 mag = 1.0D * (4.0 / dist);
-            } else if (explo instanceof Creeper creep) {
+            } else if (explo instanceof CreeperEntity) {
+                CreeperEntity creep = (CreeperEntity) explo;
                 mag = creep.isPowered() ? 1.0D * (6.0D / dist) : 1.0D * (3.0D / dist);
             } else {
                 mag = 1.0D;
@@ -139,12 +129,11 @@ public class EntityGib extends Entity {
 
     @Override
     public void tick() {
-        // Store old position for interpolation
         this.xo = this.getX();
         this.yo = this.getY();
         this.zo = this.getZ();
-        this.yRotO = this.getYRot();
-        this.xRotO = this.getXRot();
+        this.yRotO = this.yRot;
+        this.xRotO = this.xRot;
 
         if (explosion) {
             motionX *= 1D / 0.92D;
@@ -153,13 +142,10 @@ public class EntityGib extends Entity {
             explosion = false;
         }
 
-        // Apply gravity
         motionY -= 0.08D;
 
-        // Move the entity
-        move(MoverType.SELF, new Vec3(motionX, motionY, motionZ));
+        move(MoverType.SELF, new Vector3d(motionX, motionY, motionZ));
 
-        // Apply drag
         motionY *= 0.98D;
         motionX *= 0.91D;
         motionZ *= 0.91D;
@@ -170,20 +156,19 @@ public class EntityGib extends Entity {
             yawSpin = 0.0F;
         }
 
-        if (onGround() || isInWater()) {
-            setXRot(getXRot() + (-90F - (getXRot() % 360F)) / 2);
+        if (isOnGround() || isInWater()) {
+            this.xRot = this.xRot + (-90F - (this.xRot % 360F)) / 2;
             motionY *= 0.8D;
             motionX *= 0.8D;
             motionZ *= 0.8D;
         } else {
-            setXRot(getXRot() + pitchSpin);
-            setYRot(getYRot() + yawSpin);
+            this.xRot = this.xRot + pitchSpin;
+            this.yRot = this.yRot + yawSpin;
             pitchSpin *= 0.98F;
             yawSpin *= 0.98F;
         }
 
-        // Check for player collision and push gib away from player
-        net.minecraft.world.entity.player.Player player = Minecraft.getInstance().player;
+        PlayerEntity player = Minecraft.getInstance().player;
         if (player != null && this.getBoundingBox().intersects(player.getBoundingBox())) {
             double dx = this.getX() - player.getX();
             double dz = this.getZ() - player.getZ();
@@ -197,11 +182,10 @@ public class EntityGib extends Entity {
             }
         }
 
-        // Lifetime management
-        if (onGround() || isInWater()) {
+        if (isOnGround() || isInWater()) {
             groundTime++;
             if (groundTime > Config.GIB_GROUND_TIME.get() + 20) {
-                discard();
+                remove();
             }
         } else if (groundTime > Config.GIB_GROUND_TIME.get()) {
             groundTime--;
@@ -209,19 +193,19 @@ public class EntityGib extends Entity {
             groundTime = 0;
         }
 
-        if (liveTime + Config.GIB_TIME.get() < MobDismembermentClient.clientTicks) {
-            discard();
+        if (liveTime + Config.GIB_TIME.get() < MobDismemberment.clientTicks) {
+            remove();
         }
     }
 
     @Override
-    public boolean causeFallDamage(float distance, float multiplier, net.minecraft.world.damagesource.DamageSource source) {
+    public boolean causeFallDamage(float distance, float multiplier) {
         return false;
     }
 
     @Override
     public boolean isAlive() {
-        return !this.isRemoved();
+        return !this.removed;
     }
 
     @Override
@@ -249,20 +233,25 @@ public class EntityGib extends Entity {
     }
 
     @Override
-    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+    protected void defineSynchedData() {
     }
 
     @Override
-    public boolean saveAsPassenger(CompoundTag tag) {
+    public IPacket<?> getAddEntityPacket() {
+        return NetworkHooks.getEntitySpawningPacket(this);
+    }
+
+    @Override
+    public boolean saveAsPassenger(CompoundNBT tag) {
         return false;
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    protected void readAdditionalSaveData(CompoundNBT tag) {
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    protected void addAdditionalSaveData(CompoundNBT tag) {
     }
 
     @Override
@@ -276,10 +265,10 @@ public class EntityGib extends Entity {
     }
 
     public float getInterpolatedYaw(float partialTicks) {
-        return Mth.lerp(partialTicks, this.yRotO, this.getYRot());
+        return MathHelper.lerp(partialTicks, this.yRotO, this.yRot);
     }
 
     public float getInterpolatedPitch(float partialTicks) {
-        return Mth.lerp(partialTicks, this.xRotO, this.getXRot());
+        return MathHelper.lerp(partialTicks, this.xRotO, this.xRot);
     }
 }

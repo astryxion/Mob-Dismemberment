@@ -1,24 +1,22 @@
 package me.ichun.mods.mobdismemberment.client.particle;
 
 import me.ichun.mods.mobdismemberment.common.core.Config;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.particle.ParticleRenderType;
-import net.minecraft.client.particle.SpriteSet;
-import net.minecraft.client.particle.TextureSheetParticle;
+import net.minecraft.client.particle.IAnimatedSprite;
+import net.minecraft.client.particle.IParticleRenderType;
+import net.minecraft.client.particle.SpriteTexturedParticle;
+import net.minecraft.client.world.ClientWorld;
 
-public class ParticleBlood extends TextureSheetParticle {
+public class ParticleBlood extends SpriteTexturedParticle {
 
-    public ParticleBlood(ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, boolean isPlayer, SpriteSet sprites) {
+    public ParticleBlood(ClientWorld level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, boolean isPlayer, IAnimatedSprite sprites) {
         super(level, x, y, z);
 
-        // Matches original 1.12.2 constructor exactly
         this.gravity = 0.06F;
         this.rCol = 1.0F;
         this.gCol = Config.GREEN_BLOOD.get() && !isPlayer ? 1.0F : 0.0F;
         this.bCol = 0.0F;
         this.quadSize *= 1.2F;
 
-        // multiplyVelocity(1.2F) equivalent
         this.xd = xSpeed * 1.2D;
         this.yd = ySpeed * 1.2D;
         this.zd = zSpeed * 1.2D;
@@ -30,13 +28,11 @@ public class ParticleBlood extends TextureSheetParticle {
         this.lifetime = (int) (200F + (20F / (random.nextFloat() * 0.9F + 0.1F)));
         this.hasPhysics = true;
 
-        // Pick sprite from the SpriteSet (uses our custom blood_0 through blood_3 textures)
         this.pickSprite(sprites);
     }
 
     @Override
     public void tick() {
-        // Matches original 1.12.2 onUpdate() exactly
         if (this.age++ >= this.lifetime) {
             this.remove();
             return;
@@ -62,7 +58,7 @@ public class ParticleBlood extends TextureSheetParticle {
     }
 
     @Override
-    public ParticleRenderType getRenderType() {
-        return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
+    public IParticleRenderType getRenderType() {
+        return IParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
     }
 }
