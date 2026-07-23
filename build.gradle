@@ -38,8 +38,6 @@ dependencies {
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-
-	clientImplementation "net.fabricmc.fabric-api:fabric-particles-v1:${project.fabric_particles_version}"
 }
 
 processResources {

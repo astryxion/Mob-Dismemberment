@@ -12,7 +12,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.monster.Creeper;
@@ -89,7 +89,7 @@ public class EventHandlerClient {
                 skippedDismember.removeIf(Entity::isRemoved);
 
                 for (Entity ent : world.entitiesForRendering()) {
-                    if (ent instanceof Creeper || ent instanceof PrimedTnt || ent.getType() == EntityType.TNT_MINECART || ent instanceof MinecartTNT) {
+                    if (ent instanceof Creeper || ent instanceof PrimedTnt || ent.getType() == EntityTypes.TNT_MINECART || ent instanceof MinecartTNT) {
                         if (!explosionSources.contains(ent)) {
                             explosionSources.add(ent);
                         }
@@ -124,7 +124,7 @@ public class EventHandlerClient {
 
                                 queueDismember(creeper);
                             }
-                        } else if (ent instanceof PrimedTnt || ent.getType() == EntityType.TNT_MINECART || ent instanceof MinecartTNT) {
+                        } else if (ent instanceof PrimedTnt || ent.getType() == EntityTypes.TNT_MINECART || ent instanceof MinecartTNT) {
                             if (!exploTime.containsKey(ent)) {
                                 int time = MobDismembermentClient.clientTicks % 24000;
                                 if (time > 23959) {
