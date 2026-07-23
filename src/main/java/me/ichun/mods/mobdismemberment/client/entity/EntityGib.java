@@ -10,11 +10,11 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.monster.Creeper;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.vehicle.minecart.MinecartTNT;
 import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerLevel;
@@ -117,7 +117,7 @@ public class EntityGib extends Entity {
             dist = Math.pow(dist, 2);
 
             double mag;
-            if (explo instanceof PrimedTnt || explo.getType() == EntityType.TNT_MINECART || explo instanceof MinecartTNT) {
+            if (explo instanceof PrimedTnt || explo.getType() == EntityTypes.TNT_MINECART || explo instanceof MinecartTNT) {
                 mag = 1.0D * (4.0 / dist);
             } else if (explo instanceof Creeper creep) {
                 mag = creep.isPowered() ? 1.0D * (6.0D / dist) : 1.0D * (3.0D / dist);
