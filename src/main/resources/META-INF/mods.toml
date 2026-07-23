@@ -9,8 +9,11 @@ version = "${mod_version}"
 displayName = "${mod_name}"
 displayURL = "https://github.com/astryxion23/Mob-Dismemberment"
 authors = "${mod_authors}"
+# Client-only visual mod: do not require it on the dedicated server / matching versions.
+displayTest = "IGNORE_ALL_VERSION"
 description = '''
 Dismember mobs! When zombies, skeletons, and creepers die, they fall apart into pieces.
+Client-side only — safe to omit from dedicated servers (install on clients for the effect).
 
 Credits: ${mod_credits}
 '''
@@ -20,11 +23,11 @@ modId = "forge"
 mandatory = true
 versionRange = "[47,)"
 ordering = "NONE"
-side = "BOTH"
+side = "CLIENT"
 
 [[dependencies.mobdismemberment]]
 modId = "minecraft"
 mandatory = true
 versionRange = "[1.20.1,1.21)"
 ordering = "NONE"
-side = "BOTH"
+side = "CLIENT"

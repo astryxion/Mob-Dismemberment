@@ -1,5 +1,6 @@
 package me.ichun.mods.mobdismemberment.client.entity;
 
+import me.ichun.mods.mobdismemberment.client.MobDismembermentClient;
 import me.ichun.mods.mobdismemberment.client.helper.ModelHelper;
 import me.ichun.mods.mobdismemberment.common.MobDismemberment;
 import me.ichun.mods.mobdismemberment.common.core.Config;
@@ -64,7 +65,7 @@ public class EntityGib extends Entity {
      * Create a gib from a specific model part of a dying entity.
      */
     public EntityGib(Level level, LivingEntity parent, ModelHelper.PartData partData, Entity explo) {
-        this(MobDismemberment.GIB_ENTITY.get(), level);
+        this(MobDismembermentClient.GIB_ENTITY.get(), level);
 
         // Store the model part and texture
         this.modelPart = partData.part;
