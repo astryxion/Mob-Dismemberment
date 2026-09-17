@@ -8,15 +8,20 @@ import net.minecraft.util.RandomSource;
 
 public class ParticleBlood extends SingleQuadParticle {
 
-    public ParticleBlood(ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, boolean isPlayer, SpriteSet sprites, RandomSource random) {
-        super(level, x, y, z, xSpeed * 1.2D, ySpeed * 1.2D, zSpeed * 1.2D, sprites.get(random));
+    public ParticleBlood(ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, boolean isPlayer, SpriteSet sprites, RandomSource randomSource) {
+        super(level, x, y, z, xSpeed, ySpeed, zSpeed, sprites.get(randomSource));
 
         // Matches original 1.12.2 constructor exactly
         this.gravity = 0.06F;
         this.rCol = 1.0F;
-        this.gCol = Config.getGreenBlood() && !isPlayer ? 1.0F : 0.0F;
+        this.gCol = Config.GREEN_BLOOD.get() && !isPlayer ? 1.0F : 0.0F;
         this.bCol = 0.0F;
         this.quadSize *= 1.2F;
+
+        // multiplyVelocity(1.2F) equivalent
+        this.xd = xSpeed * 1.2D;
+        this.yd = ySpeed * 1.2D;
+        this.zd = zSpeed * 1.2D;
 
         this.yd += random.nextFloat() * 0.15F;
         this.zd *= 0.4F / (random.nextFloat() * 0.9F + 0.1F);
@@ -24,6 +29,11 @@ public class ParticleBlood extends SingleQuadParticle {
 
         this.lifetime = (int) (200F + (20F / (random.nextFloat() * 0.9F + 0.1F)));
         this.hasPhysics = true;
+    }
+
+    @Override
+    protected SingleQuadParticle.Layer getLayer() {
+        return SingleQuadParticle.Layer.TRANSLUCENT;
     }
 
     @Override
@@ -51,10 +61,5 @@ public class ParticleBlood extends SingleQuadParticle {
                 this.y += 0.2D;
             }
         }
-    }
-
-    @Override
-    public SingleQuadParticle.Layer getLayer() {
-        return SingleQuadParticle.Layer.TRANSLUCENT;
     }
 }

@@ -1,32 +1,28 @@
 package me.ichun.mods.mobdismemberment.client.core;
 
-import me.ichun.mods.mobdismemberment.client.MobDismembermentClient;
 import me.ichun.mods.mobdismemberment.client.entity.EntityGib;
 import me.ichun.mods.mobdismemberment.client.helper.ModelHelper;
+import me.ichun.mods.mobdismemberment.common.MobDismemberment;
 import me.ichun.mods.mobdismemberment.common.core.Config;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.monster.Creeper;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.minecart.MinecartTNT;
+import net.minecraft.world.entity.player.Player;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.UUID;
 
 public class EventHandlerClient {
     private static final String MUTANT_ZOMBIE_CLASS = "fuzs.mutantmonsters.common.world.entity.mutant.MutantZombie";
@@ -41,19 +37,14 @@ public class EventHandlerClient {
     private final HashSet<UUID> mutantZombieWasDead = new HashSet<>();
     /** How many times each Mutant Zombie has been seen resurrecting (dead → alive). */
     private final HashMap<UUID, Integer> mutantZombieReviveCounts = new HashMap<>();
-    /** Last seen raw blacklist string; used to drop skip-cache when config changes in-session. */
-    private String lastBlacklistRaw;
     private static Class<?> mutantZombieClass;
     private static java.lang.reflect.Method mutantZombieGetRemainingLives;
     private static java.lang.reflect.Method mutantZombieGetVanishingProgress;
     private static boolean mutantZombieReflectResolved;
 
-    public void register() {
-        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> onClientConnection());
-        ClientTickEvents.END_CLIENT_TICK.register(this::worldTick);
-    }
-
-    public void onLivingDeath(LivingEntity entity) {
+    @SubscribeEvent
+    public void onLivingDeath(LivingDeathEvent event) {
+        LivingEntity entity = event.getEntity();
         // ThatSoulyGuy 1.20.1 port: dismember any LivingEntity except players and babies,
         // but only when ModelHelper can actually extract gib parts (otherwise leave normal death alone).
         if (entity.level() instanceof ClientLevel) {
@@ -61,10 +52,8 @@ public class EventHandlerClient {
         }
     }
 
-    public void onClientConnection() {
-        // Leave world → edit config → rejoin picks up JSON changes without a full game quit.
-        Config.load();
-
+    @SubscribeEvent
+    public void onClientConnection(ClientPlayerNetworkEvent.LoggingIn event) {
         exploTime.clear();
         dismemberTimeout.clear();
         explosionSources.clear();
@@ -72,19 +61,19 @@ public class EventHandlerClient {
         skippedDismember.clear();
         mutantZombieWasDead.clear();
         mutantZombieReviveCounts.clear();
-        lastBlacklistRaw = null;
     }
 
-    public void worldTick(Minecraft mc) {
-        if (mc.level != null) {
+    @SubscribeEvent
+    public void worldTick(ClientTickEvent.Post event) {
+        if (Minecraft.getInstance().level != null) {
+            Minecraft mc = Minecraft.getInstance();
             ClientLevel world = mc.level;
 
-            MobDismembermentClient.clientTicks++;
-            refreshBlacklistCache();
+            MobDismemberment.clientTicks++;
 
             if (!mc.isPaused()) {
                 // Clean up removed gibs from our tracking list
-                // Note: We don't manually tick - addEntity registers the gib with the client world's entity tick list
+                // Note: We don't manually tick - ClientLevel.addEntity adds them to the world's tick list
                 activeGibs.removeIf(Entity::isRemoved);
                 skippedDismember.removeIf(Entity::isRemoved);
 
@@ -98,10 +87,10 @@ public class EventHandlerClient {
                         trackMutantZombieResurrection(living);
                     }
                     // Detect death for any LivingEntity except players
-                    if (ent instanceof LivingEntity living
-                            && !(ent instanceof Player)
-                            && !living.isBaby()
-                            && !ent.isAlive() && !dismemberTimeout.containsKey(ent)) {
+                    if (ent instanceof LivingEntity living &&
+                        !(ent instanceof Player) &&
+                        !living.isBaby() &&
+                        !ent.isAlive() && !dismemberTimeout.containsKey(ent)) {
                         queueDismember(living);
                     }
                 }
@@ -115,7 +104,7 @@ public class EventHandlerClient {
                             float swellProgress = creeper.getSwelling(0);
                             if (swellProgress >= 0.95f) { // About to explode
                                 if (!exploTime.containsKey(ent)) {
-                                    int time = MobDismembermentClient.clientTicks % 24000;
+                                    int time = MobDismemberment.clientTicks % 24000;
                                     if (time > 23959) {
                                         time -= 23999;
                                     }
@@ -126,7 +115,7 @@ public class EventHandlerClient {
                             }
                         } else if (ent instanceof PrimedTnt || ent.getType() == EntityTypes.TNT_MINECART || ent instanceof MinecartTNT) {
                             if (!exploTime.containsKey(ent)) {
-                                int time = MobDismembermentClient.clientTicks % 24000;
+                                int time = MobDismemberment.clientTicks % 24000;
                                 if (time > 23959) {
                                     time -= 23999;
                                 }
@@ -167,7 +156,7 @@ public class EventHandlerClient {
                 }
 
                 Iterator<Entry<Entity, Integer>> ite1 = exploTime.entrySet().iterator();
-                int worldTime = MobDismembermentClient.clientTicks % 24000;
+                int worldTime = MobDismemberment.clientTicks % 24000;
                 while (ite1.hasNext()) {
                     Entry<Entity, Integer> e = ite1.next();
                     if (e.getValue() + 40 < worldTime) {
@@ -184,14 +173,11 @@ public class EventHandlerClient {
      * Blacklisted entity IDs from config are also skipped.
      */
     private void queueDismember(LivingEntity entity) {
-        if (entity instanceof Player || entity.isBaby() || dismemberTimeout.containsKey(entity)) {
+        if (entity instanceof Player || entity.isBaby() || dismemberTimeout.containsKey(entity) || skippedDismember.contains(entity)) {
             return;
         }
-        // Always read live config — do not cache blacklist hits in skippedDismember.
         if (isBlacklisted(entity)) {
-            return;
-        }
-        if (skippedDismember.contains(entity)) {
+            skippedDismember.add(entity);
             return;
         }
         // Mutant Monsters: leave the corpse alone while it can still resurrect.
@@ -217,16 +203,8 @@ public class EventHandlerClient {
         dismemberTimeout.put(entity, 2);
     }
 
-    private void refreshBlacklistCache() {
-        String raw = Config.getMobBlacklistRaw();
-        if (!Objects.equals(raw, lastBlacklistRaw)) {
-            lastBlacklistRaw = raw;
-            skippedDismember.clear();
-        }
-    }
-
     private boolean isBlacklisted(LivingEntity entity) {
-        Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
+        Identifier id = EntityType.getKey(entity.getType());
         if (id == null) {
             return false;
         }
@@ -240,7 +218,7 @@ public class EventHandlerClient {
     }
 
     private boolean isMutantZombie(LivingEntity entity) {
-        Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
+        Identifier id = EntityType.getKey(entity.getType());
         return id != null && "mutantmonsters".equals(id.getNamespace()) && "mutant_zombie".equals(id.getPath());
     }
 
@@ -365,20 +343,22 @@ public class EventHandlerClient {
             addClientEntity(world, new EntityGib(world, living, partData, explo));
         }
 
-        // Spawn blood particles (creeper blasts use lighter counts than TNT-style explosions)
-        if (Config.getBlood()) {
+        // Spawn blood particles (creeper blasts use a lighter path than TNT-scale explosions)
+        if (Config.BLOOD.get()) {
+            int bloodCount = Config.BLOOD_COUNT.get();
             int bloodIterations;
-            double explosionSprayMul;
+            double sprayMult;
             if (explo == null) {
-                bloodIterations = Config.getBloodCount();
-                explosionSprayMul = 0D;
+                bloodIterations = bloodCount;
+                sprayMult = 1.0D;
             } else if (explo instanceof Creeper) {
-                bloodIterations = Math.min(Config.getBloodCount() * 2, 96);
-                explosionSprayMul = 6D;
+                bloodIterations = Math.min(bloodCount * 2, 96);
+                sprayMult = 6.0D;
             } else {
-                bloodIterations = Math.min(Config.getBloodCount() * 10, 450);
-                explosionSprayMul = 100D;
+                bloodIterations = Math.min(bloodCount * 10, 450);
+                sprayMult = 100.0D;
             }
+
             for (int k = 0; k < bloodIterations; k++) {
                 float var4 = 0.3F;
                 double mX = (double) (-Mth.sin(living.getYRot() / 180.0F * (float) Math.PI) * Mth.cos(living.getXRot() / 180.0F * (float) Math.PI) * var4);
@@ -388,8 +368,8 @@ public class EventHandlerClient {
                 float var5 = living.getRandom().nextFloat() * (float) Math.PI * 2.0F;
                 var4 *= living.getRandom().nextFloat();
 
-                if (explosionSprayMul > 0D) {
-                    var4 *= (float) explosionSprayMul;
+                if (explo != null) {
+                    var4 *= (float) sprayMult;
                 }
 
                 mX += Math.cos((double) var5) * (double) var4;
@@ -397,7 +377,7 @@ public class EventHandlerClient {
                 mZ += Math.sin((double) var5) * (double) var4;
 
                 world.addParticle(
-                        MobDismembermentClient.BLOOD_PARTICLE,
+                        MobDismemberment.BLOOD_TYPE,
                         living.getX(),
                         living.getY() + 0.5D + (living.getRandom().nextDouble() * 0.7D),
                         living.getZ(),
@@ -412,8 +392,8 @@ public class EventHandlerClient {
 
     /**
      * Add a client-side only entity to the world.
-     * Uses {@link ClientLevel#addEntity} so the entity is tracked and ticked like other client entities.
-     * Also adds to our activeGibs list for cleanup tracking.
+     * Uses ClientLevel.addEntity (replaces putNonPlayerEntity removed after 1.20.x).
+     * Also adds to our activeGibs list for manual ticking.
      */
     private void addClientEntity(ClientLevel world, EntityGib entity) {
         world.addEntity(entity);

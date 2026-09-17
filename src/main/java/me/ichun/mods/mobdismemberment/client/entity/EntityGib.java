@@ -1,7 +1,7 @@
 package me.ichun.mods.mobdismemberment.client.entity;
 
-import me.ichun.mods.mobdismemberment.client.MobDismembermentClient;
 import me.ichun.mods.mobdismemberment.client.helper.ModelHelper;
+import me.ichun.mods.mobdismemberment.common.MobDismemberment;
 import me.ichun.mods.mobdismemberment.common.core.Config;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.geom.ModelPart;
@@ -10,16 +10,17 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.vehicle.minecart.MinecartTNT;
+import net.minecraft.world.level.Level;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -59,7 +60,7 @@ public class EntityGib extends Entity {
         super(entityType, level);
         this.setId(CLIENT_ID_COUNTER.getAndDecrement());
         groundTime = 0;
-        liveTime = MobDismembermentClient.clientTicks;
+        liveTime = MobDismemberment.clientTicks;
         noPhysics = false;
     }
 
@@ -67,7 +68,7 @@ public class EntityGib extends Entity {
      * Create a gib from a specific model part of a dying entity.
      */
     public EntityGib(Level level, LivingEntity parent, ModelHelper.PartData partData, Entity explo) {
-        this(MobDismembermentClient.GIB_ENTITY, level);
+        this(MobDismemberment.GIB_TYPE, level);
 
         // Store the model part and texture
         this.modelPart = partData.part;
@@ -84,7 +85,7 @@ public class EntityGib extends Entity {
         this.centerY = partData.centerY;
         this.centerZ = partData.centerZ;
 
-        liveTime = MobDismembermentClient.clientTicks;
+        liveTime = MobDismemberment.clientTicks;
 
         // Calculate spawn position based on part offset
         double posX = parent.getX() + partOffsetX;
@@ -116,7 +117,7 @@ public class EntityGib extends Entity {
             dist = Math.pow(dist, 2);
 
             double mag;
-            if (explo instanceof PrimedTnt || explo instanceof MinecartTNT) {
+            if (explo instanceof PrimedTnt || explo.getType() == EntityTypes.TNT_MINECART || explo instanceof MinecartTNT) {
                 mag = 1.0D * (4.0 / dist);
             } else if (explo instanceof Creeper creep) {
                 mag = creep.isPowered() ? 1.0D * (6.0D / dist) : 1.0D * (3.0D / dist);
@@ -124,8 +125,6 @@ public class EntityGib extends Entity {
                 mag = 1.0D;
             }
             mag = Math.pow(mag, 2) * 0.2D;
-            // When the victim is on top of the explosion source (e.g. the creeper's own parts), dist is tiny and mag
-            // becomes astronomical, which tanks the client. Same singularity hurts mobs hugging the creeper.
             mag = Math.min(mag, 48.0D);
 
             double mag2 = posY - explo.getY();
@@ -138,11 +137,6 @@ public class EntityGib extends Entity {
         this.motionX = motionX;
         this.motionY = motionY;
         this.motionZ = motionZ;
-    }
-
-    @Override
-    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
-        return false;
     }
 
     @Override
@@ -208,22 +202,27 @@ public class EntityGib extends Entity {
         // Lifetime management
         if (onGround() || isInWater()) {
             groundTime++;
-            if (groundTime > Config.getGibGroundTime() + 20) {
+            if (groundTime > Config.GIB_GROUND_TIME.get() + 20) {
                 discard();
             }
-        } else if (groundTime > Config.getGibGroundTime()) {
+        } else if (groundTime > Config.GIB_GROUND_TIME.get()) {
             groundTime--;
         } else {
             groundTime = 0;
         }
 
-        if (liveTime + Config.getGibTime() < MobDismembermentClient.clientTicks) {
+        if (liveTime + Config.GIB_TIME.get() < MobDismemberment.clientTicks) {
             discard();
         }
     }
 
     @Override
     public boolean causeFallDamage(double distance, float multiplier, DamageSource source) {
+        return false;
+    }
+
+    @Override
+    public boolean hurtServer(ServerLevel level, DamageSource damageSource, float amount) {
         return false;
     }
 

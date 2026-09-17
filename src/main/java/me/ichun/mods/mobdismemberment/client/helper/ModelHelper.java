@@ -3,13 +3,14 @@ package me.ichun.mods.mobdismemberment.client.helper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.LivingEntity;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.*;
 
@@ -17,21 +18,6 @@ import java.util.*;
  * Helper class to extract model parts from any entity's renderer.
  */
 public class ModelHelper {
-
-    /**
-     * True for {@link ModelPart} cube list elements in both dev (named types contain "Cube") and
-     * production (intermediary names like {@code class_630$class_619} with no "Cube" substring).
-     */
-    private static boolean isModelPartCubeListElement(Object first) {
-        if (first == null) {
-            return false;
-        }
-        Class<?> c = first.getClass();
-        if (ModelPart.class.equals(c.getDeclaringClass())) {
-            return true;
-        }
-        return c.getName().contains("Cube");
-    }
 
     /**
      * Data class holding a model part and its position offset on the entity.
@@ -95,16 +81,17 @@ public class ModelHelper {
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static Identifier getEntityTexture(LivingEntity entity) {
         try {
-            EntityRenderer<?, ?> renderer = Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(entity);
-            if (renderer instanceof LivingEntityRenderer livingRenderer) {
-                LivingEntityRenderState state = (LivingEntityRenderState) livingRenderer.createRenderState();
-                livingRenderer.extractRenderState(entity, state, 0.0F);
-                return livingRenderer.getTextureLocation(state);
+            EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
+            EntityRenderState renderState = dispatcher.extractEntity(entity, 0.0F);
+            EntityRenderer<?, ?> renderer = dispatcher.getRenderer(renderState);
+            if (renderState instanceof LivingEntityRenderState livingRenderState
+                    && renderer instanceof LivingEntityRenderer livingRenderer) {
+                return livingRenderer.getTextureLocation(livingRenderState);
             }
         } catch (Exception e) {
             // Failed to get texture
         }
-        return Identifier.fromNamespaceAndPath("minecraft", "textures/entity/zombie/zombie.png");
+        return Identifier.withDefaultNamespace("textures/entity/zombie/zombie.png");
     }
 
     /**
@@ -154,9 +141,7 @@ public class ModelHelper {
 
         // Only add parts that have actual geometry (cubes)
         if (hasCubes(part)) {
-            // Detached clone: the renderer's EntityModel is shared and mutated every frame for other
-            // entities of the same type. Holding live ModelPart references causes wrong poses/textures in production.
-            parts.add(new PartData(cloneModelPartDetached(part), name, worldX, worldY, worldZ));
+            parts.add(new PartData(part, name, worldX, worldY, worldZ));
         }
 
         // Process children
@@ -174,61 +159,6 @@ public class ModelHelper {
     /**
      * Check if a ModelPart has any cubes (geometry).
      */
-    /**
-     * Deep-clone a {@link ModelPart} subtree with new parent/child nodes. Cuboid lists are shared by reference
-     * (geometry is treated as immutable); pivots and rotations are copied so this tree is independent of the
-     * living renderer model.
-     */
-    private static ModelPart cloneModelPartDetached(ModelPart original) {
-        Map<String, ModelPart> origChildren = getChildren(original);
-        Map<String, ModelPart> newChildren = new LinkedHashMap<>();
-        if (origChildren != null) {
-            for (Map.Entry<String, ModelPart> entry : origChildren.entrySet()) {
-                newChildren.put(entry.getKey(), cloneModelPartDetached(entry.getValue()));
-            }
-        }
-        List<?> cubeList = getCubeList(original);
-        try {
-            Constructor<ModelPart> ctor = ModelPart.class.getDeclaredConstructor(List.class, Map.class);
-            ctor.setAccessible(true);
-            ModelPart copy = ctor.newInstance(cubeList, newChildren);
-            copyPartTransforms(original, copy);
-            return copy;
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("Mob Dismemberment: failed to clone ModelPart for detached gib", e);
-        }
-    }
-
-    private static void copyPartTransforms(ModelPart from, ModelPart to) {
-        to.x = from.x;
-        to.y = from.y;
-        to.z = from.z;
-        to.xRot = from.xRot;
-        to.yRot = from.yRot;
-        to.zRot = from.zRot;
-        to.visible = from.visible;
-        to.skipDraw = from.skipDraw;
-    }
-
-    private static List<?> getCubeList(ModelPart part) {
-        try {
-            for (Field field : ModelPart.class.getDeclaredFields()) {
-                if (field.getType() == List.class) {
-                    field.setAccessible(true);
-                    List<?> list = (List<?>) field.get(part);
-                    if (list != null && !list.isEmpty()) {
-                        Object first = list.get(0);
-                        if (isModelPartCubeListElement(first)) {
-                            return new ArrayList<>(list);
-                        }
-                    }
-                }
-            }
-        } catch (Exception ignored) {
-        }
-        return new ArrayList<>();
-    }
-
     private static boolean hasCubes(ModelPart part) {
         try {
             // Access the cubes field via reflection
@@ -237,8 +167,9 @@ public class ModelHelper {
                     field.setAccessible(true);
                     List<?> list = (List<?>) field.get(part);
                     if (list != null && !list.isEmpty()) {
+                        // Check if it's a list of Cubes
                         Object first = list.get(0);
-                        if (isModelPartCubeListElement(first)) {
+                        if (first.getClass().getName().contains("Cube")) {
                             return true;
                         }
                     }
@@ -282,7 +213,7 @@ public class ModelHelper {
                     List<?> list = (List<?>) field.get(part);
                     if (list != null && !list.isEmpty()) {
                         Object first = list.get(0);
-                        if (isModelPartCubeListElement(first)) {
+                        if (first.getClass().getName().contains("Cube")) {
                             cubes = list;
                             break;
                         }

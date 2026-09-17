@@ -1,157 +1,70 @@
 package me.ichun.mods.mobdismemberment.common.core;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import me.ichun.mods.mobdismemberment.common.MobDismemberment;
-import net.fabricmc.loader.api.FabricLoader;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Client-side configuration persisted as JSON under the game config directory.
- * Defaults and validation mirror the Forge/NeoForge client config definitions.
- */
-public final class Config {
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path CONFIG_PATH = FabricLoader.getInstance()
-            .getConfigDir()
-            .resolve(MobDismemberment.MOD_ID + "-client.json");
+public class Config {
+    public static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+    public static final ModConfigSpec SPEC;
 
-    private static volatile int gibTime = 1000;
-    private static volatile int gibGroundTime = 100;
-    private static volatile boolean blood = true;
-    private static volatile int bloodCount = 100;
-    private static volatile boolean greenBlood = false;
-    private static volatile boolean gibPushing = true;
-    private static volatile String mobBlacklist = "";
+    public static final ModConfigSpec.IntValue GIB_TIME;
+    public static final ModConfigSpec.IntValue GIB_GROUND_TIME;
+    public static final ModConfigSpec.BooleanValue BLOOD;
+    public static final ModConfigSpec.IntValue BLOOD_COUNT;
+    public static final ModConfigSpec.BooleanValue GREEN_BLOOD;
+    public static final ModConfigSpec.BooleanValue GIB_PUSHING;
+    public static final ModConfigSpec.ConfigValue<String> MOB_BLACKLIST;
 
-    private Config() {
-    }
+    static {
+        BUILDER.comment("Client-side configuration for Mob Dismemberment");
+        BUILDER.push("client");
 
-    public static void load() {
-        if (!Files.isRegularFile(CONFIG_PATH)) {
-            save();
-            return;
-        }
-        try (BufferedReader reader = Files.newBufferedReader(CONFIG_PATH, StandardCharsets.UTF_8)) {
-            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
-            if (root.has("gibTime")) {
-                gibTime = clampInt(root.get("gibTime").getAsInt(), 0, Integer.MAX_VALUE, 1000);
-            }
-            if (root.has("gibGroundTime")) {
-                gibGroundTime = clampInt(root.get("gibGroundTime").getAsInt(), 0, Integer.MAX_VALUE, 100);
-            }
-            if (root.has("blood")) {
-                blood = root.get("blood").getAsBoolean();
-            }
-            if (root.has("bloodCount")) {
-                bloodCount = clampInt(root.get("bloodCount").getAsInt(), 1, 1000, 100);
-            }
-            if (root.has("greenBlood")) {
-                greenBlood = root.get("greenBlood").getAsBoolean();
-            }
-            if (root.has("gibPushing")) {
-                gibPushing = root.get("gibPushing").getAsBoolean();
-            }
-            if (root.has("mobBlacklist")) {
-                mobBlacklist = root.get("mobBlacklist").isJsonNull() ? "" : root.get("mobBlacklist").getAsString();
-            } else {
-                mobBlacklist = "";
-            }
-        } catch (Exception ignored) {
-            gibTime = 1000;
-            gibGroundTime = 100;
-            blood = true;
-            bloodCount = 100;
-            greenBlood = false;
-            gibPushing = true;
-            mobBlacklist = "";
-        }
-    }
+        GIB_TIME = BUILDER
+                .comment("How long gibs last (in ticks). Default: 1000")
+                .defineInRange("gibTime", 1000, 0, Integer.MAX_VALUE);
 
-    public static void save() {
-        JsonObject root = new JsonObject();
-        root.addProperty("_comment", "Client-side configuration for Mob Dismemberment");
-        root.addProperty("gibTime", gibTime);
-        root.addProperty("gibGroundTime", gibGroundTime);
-        root.addProperty("blood", blood);
-        root.addProperty("bloodCount", bloodCount);
-        root.addProperty("greenBlood", greenBlood);
-        root.addProperty("gibPushing", gibPushing);
-        root.addProperty("mobBlacklist", mobBlacklist == null ? "" : mobBlacklist);
-        root.addProperty("_mobBlacklistComment", "Comma-separated entity IDs that should never be dismembered. Example: minecraft:zombie,mutantmonsters:mutant_zombie. Leave empty for none.");
+        GIB_GROUND_TIME = BUILDER
+                .comment("How long gibs last on the ground before fading (in ticks). Default: 100")
+                .defineInRange("gibGroundTime", 100, 0, Integer.MAX_VALUE);
 
-        try {
-            Files.createDirectories(CONFIG_PATH.getParent());
-        } catch (IOException ignored) {
-        }
-        try (BufferedWriter writer = Files.newBufferedWriter(CONFIG_PATH, StandardCharsets.UTF_8)) {
-            GSON.toJson(root, writer);
-        } catch (IOException ignored) {
-        }
-    }
+        BLOOD = BUILDER
+                .comment("Enable blood particles. Default: true")
+                .define("blood", true);
 
-    private static int clampInt(int value, int min, int max, int fallback) {
-        if (value < min || value > max) {
-            return fallback;
-        }
-        return value;
-    }
+        BLOOD_COUNT = BUILDER
+                .comment("Number of blood particles to spawn. Default: 100")
+                .defineInRange("bloodCount", 100, 1, 1000);
 
-    public static int getGibTime() {
-        return gibTime;
-    }
+        GREEN_BLOOD = BUILDER
+                .comment("Use green blood instead of red. Default: false")
+                .define("greenBlood", false);
 
-    public static int getGibGroundTime() {
-        return gibGroundTime;
-    }
+        GIB_PUSHING = BUILDER
+                .comment("Allow gibs to push entities. Default: true")
+                .define("gibPushing", true);
 
-    public static boolean getBlood() {
-        return blood;
-    }
+        MOB_BLACKLIST = BUILDER
+                .comment("Comma-separated entity IDs that should never be dismembered. Example: minecraft:zombie,mutantmonsters:mutant_zombie. Leave empty for none.")
+                .define("mobBlacklist", "");
 
-    public static int getBloodCount() {
-        return bloodCount;
-    }
-
-    public static boolean getGreenBlood() {
-        return greenBlood;
-    }
-
-    public static boolean getGibPushing() {
-        return gibPushing;
-    }
-
-    public static String getMobBlacklistRaw() {
-        return mobBlacklist == null ? "" : mobBlacklist;
+        BUILDER.pop();
+        SPEC = BUILDER.build();
     }
 
     /**
-     * Parsed blacklist IDs from {@link #mobBlacklist} (lowercase, trimmed, empty entries dropped).
-     * Surrounding quotes on entries are stripped so edits like {@code "minecraft:zombie"} still match.
+     * Parsed blacklist IDs from {@link #MOB_BLACKLIST} (lowercase, trimmed, empty entries dropped).
      */
     public static List<String> getMobBlacklist() {
-        String raw = getMobBlacklistRaw();
+        String raw = MOB_BLACKLIST.get();
         List<String> result = new ArrayList<>();
-        if (raw.isBlank() || "none".equalsIgnoreCase(raw.trim()) || "[]".equals(raw.trim())) {
+        if (raw == null || raw.isBlank()) {
             return result;
         }
         for (String part : raw.split(",")) {
             String id = part.trim().toLowerCase(Locale.ROOT);
-            if (id.length() >= 2
-                    && ((id.startsWith("\"") && id.endsWith("\"")) || (id.startsWith("'") && id.endsWith("'")))) {
-                id = id.substring(1, id.length() - 1).trim();
-            }
             if (!id.isEmpty()) {
                 result.add(id);
             }
