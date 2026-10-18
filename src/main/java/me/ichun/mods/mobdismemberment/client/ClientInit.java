@@ -22,7 +22,6 @@ public final class ClientInit {
     }
 
     public static void init(IEventBus modEventBus) {
-        MobDismembermentClient.register(modEventBus);
         modEventBus.addListener(ClientInit::clientSetup);
         modEventBus.addListener(ClientInit::registerEntityRenderers);
         modEventBus.addListener(ClientInit::registerParticleProviders);
@@ -52,10 +51,16 @@ public final class ClientInit {
     }
 
     private static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerEntityRenderer(MobDismembermentClient.GIB_ENTITY.get(), RenderGib::new);
+        event.registerEntityRenderer(MobDismembermentClient.GIB_ENTITY, RenderGib::new);
     }
 
     private static void registerParticleProviders(RegisterParticleProvidersEvent event) {
-        event.registerSpriteSet(MobDismemberment.BLOOD_PARTICLE.get(), BloodParticleProvider::new);
+        // Present during initial load. Missing after joining a server that does not register this particle.
+        if (MobDismemberment.BLOOD_PARTICLE.isPresent()) {
+            MobDismembermentClient.bloodParticle = MobDismemberment.BLOOD_PARTICLE.get();
+        }
+        if (MobDismembermentClient.bloodParticle != null) {
+            event.registerSpriteSet(MobDismembermentClient.bloodParticle, BloodParticleProvider::new);
+        }
     }
 }

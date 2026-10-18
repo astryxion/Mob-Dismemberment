@@ -1,5 +1,6 @@
 package me.ichun.mods.mobdismemberment.client.core;
 
+import me.ichun.mods.mobdismemberment.client.MobDismembermentClient;
 import me.ichun.mods.mobdismemberment.client.entity.EntityGib;
 import me.ichun.mods.mobdismemberment.client.helper.ModelHelper;
 import me.ichun.mods.mobdismemberment.common.MobDismemberment;
@@ -370,7 +371,7 @@ public class EventHandlerClient {
         }
 
         // Spawn blood particles (creeper blasts use a lighter path than TNT-style explosions)
-        if (Config.BLOOD.get()) {
+        if (Config.BLOOD.get() && MobDismembermentClient.bloodParticle != null) {
             int bloodIterations = Config.BLOOD_COUNT.get();
             double explosionSprayMul = 0D;
             if (explo != null) {
@@ -400,7 +401,7 @@ public class EventHandlerClient {
                 mZ += Math.sin((double) var5) * (double) var4;
 
                 world.addParticle(
-                        MobDismemberment.BLOOD_PARTICLE.get(),
+                        MobDismembermentClient.bloodParticle,
                         living.getX(),
                         living.getY() + 0.5D + (living.getRandom().nextDouble() * 0.7D),
                         living.getZ(),
