@@ -65,7 +65,7 @@ public class EntityGib extends Entity {
      * Create a gib from a specific model part of a dying entity.
      */
     public EntityGib(Level level, LivingEntity parent, ModelHelper.PartData partData, Entity explo) {
-        this(MobDismembermentClient.GIB_ENTITY.get(), level);
+        this(MobDismembermentClient.GIB_ENTITY, level);
 
         // Store the model part and texture
         this.modelPart = partData.part;
